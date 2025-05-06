@@ -1,0 +1,10 @@
+[project]
+name = "prometeo-mcp"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = ["mcp[cli]>=1.6.0"]
+
+[tool.poetry.dependencies]
+prometeo = { git = "https://github.com/prometeoapi/prometeo-python", rev = "prometeo-2.0.1" }
