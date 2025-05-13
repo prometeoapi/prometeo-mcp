@@ -119,7 +119,7 @@ from langchain.tools import Tool
 
 prometeo_server_tool = Tool.from_function(
     name="PrometeoServer",
-    func=lambda x: os.system("uv run mcp/server.py"),
+    func=lambda x: os.system("uv run prometeo_mcp/server.py"),
     description="Runs Prometeo API server"
 )
 ```
