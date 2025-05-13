@@ -54,9 +54,9 @@ Inside the Claude Desktop JSON config, add or extend the mcpServers section like
       "command": "uv",
       "args": [
         "--directory",
-        "/your/path/to/mcp-server-demo",
+        "/your/path/to/host",
         "run",
-        "mcp/server.py"
+        "prometeo_mcp/server.py"
       ],
       "env": {
         "PROMETEO_API_KEY": "your_api_key",
@@ -67,8 +67,10 @@ Inside the Claude Desktop JSON config, add or extend the mcpServers section like
 }
 ```
 
-> Replace /your/path/to/mcp-server-demo with the full absolute path on your system.
+> Replace /your/path/to/host with the full absolute path on your system.
+>
 > Replace your_api_key with your Prometeo sandbox or production key.
+>
 
 
 ### 🧠 OpenAI GPTs (via Plugins or Tool Use)
@@ -76,7 +78,7 @@ Inside the Claude Desktop JSON config, add or extend the mcpServers section like
 For GPTs that support calling tools via process launch (or via Agent toolchains like LangChain, AutoGen, etc.), use this shell command:
 
 ```bash
-uv run mcp/server.py
+uv run prometeo_mcp/server.py
 ```
 
 You can wrap this in a tool definition or ToolExecutor.
@@ -91,9 +93,9 @@ You can wrap this in a tool definition or ToolExecutor.
       "exec": "uv",
       "args": [
         "run",
-        "mcp/server.py"
+        "prometeo_mcp/server.py"
       ],
-      "cwd": "/your/path/to/mcp-server-demo",
+      "cwd": "/your/path/to/host",
       "env": {
         "PROMETEO_API_KEY": "your_api_key",
         "PROMETEO_ENVIRONMENT": "sandbox"
@@ -103,8 +105,10 @@ You can wrap this in a tool definition or ToolExecutor.
 }
 ```
 
-> Replace /your/path/to/mcp-server-demo with the full absolute path on your system.
+> Replace /your/path/to/host with the full absolute path on your system.
+>
 > Replace your_api_key with your Prometeo sandbox or production key.
+>
 
 #### 🧪 LangChain (via Runnable or Tool)
 
@@ -115,7 +119,7 @@ from langchain.tools import Tool
 
 prometeo_server_tool = Tool.from_function(
     name="PrometeoServer",
-    func=lambda x: os.system("uv run mcp/server.py"),
+    func=lambda x: os.system("uv run prometeo_mcp/server.py"),
     description="Runs Prometeo API server"
 )
 ```
@@ -157,7 +161,7 @@ uv pip install -e .[dev]
 Run the application:
 
 ```bash
-uv run mcp/server.py
+uv run prometeo_mcp/server.py
 ```
 
 ## 📄 License
