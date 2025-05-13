@@ -6,6 +6,11 @@ from prometeo import Client
 from prometeo.banking.exceptions import BankingClientError
 from prometeo.curp import exceptions, Gender, State
 from mcp.server.fastmcp import FastMCP
+from dotenv import load_dotenv
+
+
+# Load .env file from project root
+load_dotenv(dotenv_path=os.path.join(os.path.dirname(__file__), '..', '.env'))
 
 
 # Create MCP server
@@ -24,16 +29,16 @@ _interactive_fields = {}
 
 # Tool: CURP direct query
 @mcp.tool()
-def curp_query(curp: str) -> dict:
+async def curp_query(curp: str) -> dict:
     """Query an existing CURP"""
     try:
-        return client.curp.query(curp)
+        return await client.curp.query(curp)
     except exceptions.CurpError as e:
         return {"error": f"CURP does not exist: {e.message}"}
 
 # Tool: CURP reverse query
 @mcp.tool()
-def curp_reverse_query(
+async def curp_reverse_query(
     state: str | State,
     birthdate: str,
     name: str,
@@ -46,7 +51,7 @@ def curp_reverse_query(
         parsed_state = State[state.upper()]
         parsed_gender = Gender[gender.upper()]
         parsed_birthdate = datetime.strptime(birthdate, "%Y-%m-%d")
-        return client.curp.reverse_query(
+        return await client.curp.reverse_query(
             parsed_state, parsed_birthdate, name, first_surname, last_surname, parsed_gender
         )
     except (KeyError, ValueError) as e:
