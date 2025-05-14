@@ -48,8 +48,8 @@ async def curp_reverse_query(
 ) -> dict:
     """Query a CURP using personal data"""
     try:
-        parsed_state = State[state.upper()]
-        parsed_gender = Gender[gender.upper()]
+        parsed_state = State(state.upper())
+        parsed_gender = Gender(gender.upper())
         parsed_birthdate = datetime.strptime(birthdate, "%Y-%m-%d")
         return await client.curp.reverse_query(
             parsed_state, parsed_birthdate, name, first_surname, last_surname, parsed_gender
