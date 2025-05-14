@@ -39,12 +39,12 @@ async def test_curp_reverse_query_success():
     with patch("prometeo_mcp.server.client.curp.reverse_query", new_callable=AsyncMock) as mock_reverse:
         mock_reverse.return_value = {"curp": "XYZ789"}
         result = await curp_reverse_query(
-            state="OAXACA",
+            state="OC",
             birthdate="2000-01-01",
             name="JUAN",
             first_surname="PEREZ",
             last_surname="LOPEZ",
-            gender="MALE"
+            gender="H"
         )
         assert result == {"curp": "XYZ789"}
 
