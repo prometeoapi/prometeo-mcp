@@ -66,8 +66,9 @@ async def validate_account(
     country_code: str,
     bank_code: Optional[str] = None,
     document_number: Optional[str] = None,
+    document_type: Optional[str] = None,
     branch_code: Optional[str] = None,
-    account_type: Optional[List[str]] = None,
+    account_type: Optional[str] = None,
 ):
     """Validate an account with Prometeo"""
     return await client.account_validation.validate(
@@ -75,6 +76,7 @@ async def validate_account(
         country_code=country_code,
         bank_code=bank_code,
         document_number=document_number,
+        document_type=document_type,
         branch_code=branch_code,
         account_type=account_type,
     )
