@@ -1,0 +1,1718 @@
+openapi: 3.1.0
+info:
+  title: Account Validation API
+  version: '1.0'
+  description: Endpoints for Account Validation API
+  contact:
+    email: info@prometeoapi.com
+    name: Prometeo
+    url: 'https://prometeoapi.com'
+servers:
+  - url: 'https://account-validation.sandbox.prometeoapi.com'
+    variables: {}
+    description: Sandbox
+  - url: 'https://account-validation.prometeoapi.net'
+    variables: {}
+    description: Production
+components:
+  schemas:
+    AccountNumber:
+      type: string
+      description: |
+        Número de cuenta a consultar
+        
+          - Para `AR` DEBE ser un número de cuenta bancaria en formato CBU, CVU o Alias.
+
+          - Para `BR` DEBE ser una llave pix, un número de cuenta bancaria en formato local o IBAN (International Bank Account Number). Para el formato local, se puede utilizar “-” antes del dígito verificador (Ejemplo: 876543-2 o 8765432).
+        
+          - Para `CO` DEBE ser un número de cuenta bancaria en formato local.
+
+          - Para `CL` DEBE ser un número de cuenta bancaria en formato local.
+
+          - Para `EC` DEBE ser un número de cuenta bancaria en formato local.
+
+          - Para `MX` DEBE ser un número de cuenta bancaria en formato local o CLABE (Clave Bancaria Estandarizada).
+
+          - Para `PE` DEBE ser un número de cuenta bancaria en formato local o CCI (Código de Cuenta Interbancaria).
+
+          - Para `UY` DEBE ser un formato válido de acuerdo a esta tabla:
+            <br/>
+            <details>
+            <summary>Ver tabla - <code>UY</code></summary><br/>
+
+            | Banco           | Formato                 | Descripción                                                                                                                                                     | Padding |
+            |-----------------|-------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------|---------|
+            | BANDES          | SSSXXXXXX              | 9 caracteres. Los primeros 3 (SSS) corresponden a la sucursal. Los siguientes 6 (XXXXXX) corresponden a la cuenta.                                              | ✅      |
+            | BHU             | SSSYYXXXXXXV           | 12 caracteres. No se incluyen guiones. Los primeros 3 dígitos (SSS) corresponden a la sucursal y siempre comienzan con cero. (YY) es el tipo de cuenta, (XXXXXX) es el número de cuenta con 6 dígitos, rellenado con ceros a la izquierda si es necesario. (V) es un dígito verificador. | ✅      |
+            | BROU            | XXXXXXXXXYYYYY         | 14 caracteres. Se forma con un número común de 9 dígitos (Cuenta Cliente) + un número de Sub Cuenta de 5 dígitos como correlativo dentro de la Cuenta Cliente.   | ✅      |
+            | CITI            | XXXXXXXXXX             | 10 caracteres. Sin espacios, rellenado con ceros a la izquierda hasta completar el largo.                                                                      | ✅      |
+            | HERITAGE        | XXXXXXXYY              | 9 caracteres. 7 dígitos correspondientes a la cuenta, rellenados con ceros a la izquierda. 2 dígitos correspondientes a la subcuenta.                          | ✅      |
+            | ITAU            | XXXXXXX                | 7 caracteres. Siempre se completa con ceros a la izquierda hasta completar el largo.                                                                          | ✅      |
+            | OCA BLUE        | XXXXXXX                | 7 caracteres. Rellenado con ceros a la izquierda hasta completar el largo.                                                                                    | ✅      |
+            | SANTANDER       | SSSSXXXXXXXXXXXX       | 16 caracteres. Los primeros 4 dígitos corresponden a la sucursal, rellenados con ceros a la izquierda. Los siguientes 12 dígitos corresponden a la cuenta, también rellenados. | ✅      |
+            | SCOTIABANK      | XXXXXXXXXX             | 10 caracteres. Rellenado con ceros a la izquierda hasta completar el largo.                                                                                   | ✅      |
+            | BBVA            | XXXXXXXXX              | Hasta 9 caracteres.                                                                                                                                           | ❌      |
+            | HSBC            | XXXX a XXXXXXXXXX      | Entre 4 y 10 caracteres.                                                                                                                                      | ❌      |
+            | NACIÓN ARGENTINA| XXXXXXXXXXXX           | Hasta 12 caracteres.                                                                                                                                          | ❌      |
+            | PREX            | XXXXXXXX               | Hasta 8 caracteres.                                                                                                                                           | ❌      |
+            | MIDINERO        | XXX a XXXXXXXXXXX      | Entre 3 y 11 caracteres.                                                                                                                                      | ❌      |
+
+
+
+            > (*) _Padding_, se debe rellenar con ceros a la izquierda del número de cuenta. Aquellos números que no deben rellenarse pueden tener un largo inferior al que se indica en el formato.
+
+            Donde:
+              S - Número de Sucursal.
+              Y - Número de Producto.
+              X - Número de Cuenta.
+              V - Dígito verificador.
+
+            </details>
+    DocumentNumber:
+      type: string
+      description: |
+        Número de documento necesario para:
+
+          - Para `BR` DEBE ser un número de CPF/CNPJ(este parámetro **no es requerido** si se está validando una llave pix).
+        
+          - Para `CO` DEBE ser un número de CC/CD/CE/NIT/TI/PAS/IEPN/IEPJ/FD/RC. Solo valores CC o NIT soportados para otros bancos distintos a `007` (BANCOLOMBIA)
+
+          - Para `CL` DEBE ser un número de RUT.
+        
+          - Para `AR`, `MX`, `PE`, `US`, `UY` este parámetro **no es requerido**.
+          
+          - Para `EC` DEBE ser un número de CC/PAS/RUC (para todos los bank_codes excepto: `0010` BANCO PICHINCHA,  `0017` BANCO GUAYAQUIL, `0030` BANCO PACIFICO, `0032` BANCO INTERNACIONAL).     
+    DocumentType:
+      type: string
+      enum:
+        - CC
+        - CD
+        - CE
+        - CI
+        - CNPJ
+        - CPF
+        - DNI
+        - FD
+        - IEPN
+        - IEPJ
+        - NIT
+        - PAS
+        - RC
+        - RFC
+        - RUC
+        - RUT
+        - TI
+      description: |
+        Tipo de documento. A continuación listamos los tipos para cada país.
+
+        - Para `AR`, `BR`, `MX`, `PE`, `US`, `UY` este parámetro **no es requerido**.
+        
+        - Para `EC` este parametro **es requerido** (para todos los bank_codes excepto: `0010` BANCO PICHINCHA, `0017` BANCO GUAYAQUIL, `0030` BANCO PACIFICO, `0032` BANCO INTERNACIONAL).     
+        A continuación se listan todos los tipos de documentos disponibles.
+
+        ##### Lista de tipo de documentos en cada país:
+
+        <details>
+        <summary>&ensp;Brasil - <code>BR</code></summary>
+
+          - `CNPJ` - Cadastro Nacional da Pessoa Jurídica
+
+          - `CPF` - Cadastro de Pessoas Físicas
+
+        </details>
+        
+        <details>
+        <summary>&ensp;Colombia - <code>CO</code></summary>
+
+          - `CC` - Cédula de Ciudadanía
+
+          - `NIT` - Número de Identificación Tributaria        
+
+        </details>
+
+        <details>
+        <summary>&ensp;Chile - <code>CL</code></summary>
+
+          - `RUT` - Registro Único Tributario
+
+        </details>
+
+        <details>
+        <summary>&ensp;Ecuador - <code>EC</code></summary>
+
+          - `CC` - Cédula de Ciudadanía
+
+          - `RUC` - Registro Único Contribuyentes
+
+          - `PAS` - Pasaporte
+
+        </details>
+
+        <details>
+        <summary>&ensp;Mexico - <code>MX</code></summary>
+
+          - `RFC` - Registro Federal de Contribuyentes
+
+        </details>
+
+        <details>
+        <summary>&ensp;Peru - <code>PE</code></summary>
+
+          - `DNI` - Documento Nacional de Identidad
+
+          - `RUC` - Registro Único de Contribuyentes
+
+        </details>
+
+        <details>
+        <summary>&ensp;Uruguay - <code>UY</code></summary>
+
+          - `CI` - Cedula Identidad
+
+          - `RUT` - Registro Único Tributario
+
+        </details>
+    AccountType:
+      type: string
+      enum:
+        - SAVINGS
+        - CHECKING
+        - DEMAND
+        - PAYMENTS
+        - EASY
+        - PUBLIC_ENTITY
+      description: |
+        Tipo de cuenta. A continuación listamos los tipos para cada país.
+
+        - Para `BR` este parámetro **no es requerido** si `account_number` esta en formato IBAN.
+
+        - Para `AR`, `MX`, `PE`, `US`, `UY` este parámetro **no es requerido**.
+        
+        - Para `EC` este parametro **es requerido** (para todos los bank_codes excepto: `0010` BANCO PICHINCHA,  `0017` BANCO GUAYAQUIL, `0030` BANCO PACIFICO, `0032` BANCO INTERNACIONAL).     
+        A continuación se listan todos los tipos de cuentas disponibles.
+
+        ##### Lista de tipo de cuentas en cada país:
+
+        <details>
+        <summary>&ensp;Brasil - <code>BR</code></summary>
+
+          - `SAVINGS` - CONTA POUPANCA
+
+          - `CHECKING` - CONTA CORRENTE
+
+          - `PAYMENTS` - CONTA PAGAMENTO
+
+          - `EASY` - CONTA FACIL
+
+          - `PUBLIC_ENTITY` - ENTIDADES PUBLICA
+
+          - `PIX_KEY` - CHAVE PIX
+
+        </details>
+
+        <details>
+        <summary>&ensp;Peru - <code>PE</code></summary>
+
+          - `SAVINGS` - CUENTA AHORROS
+
+          - `CHECKING` - CUENTA CORRIENTE
+
+        </details>
+        
+        <details>
+        <summary>&ensp;Colombia - <code>CO</code></summary>
+        
+         - `SAVINGS` - CUENTA AHORROS
+        
+         - `CHECKING` - CUENTA CORRIENTE
+        
+        </details>
+        
+        <details>
+
+        <summary>&ensp;Chile - <code>CL</code></summary>
+        
+         - `SAVINGS` - CUENTA AHORROS
+        
+         - `CHECKING` - CUENTA CORRIENTE
+
+         - `DEMAND` - CUENTA VISTA
+        
+        </details>
+        
+        <details>
+        <summary>&ensp;Ecuador - <code>EC</code></summary>
+        
+         - `SAVINGS` - CUENTA AHORROS
+        
+         - `CHECKING` - CUENTA CORRIENTE
+
+         - `VIRTUAL` - CUENTA VIRTUAL
+
+         - `ROL_ELECTRONICO` - CUENTA ROL ELECTRONICA
+
+         - `CUENTA_AMIGA` - CUENTA AMIGA
+
+         - `CARD` - TARJETA DE DEBITO
+        
+        </details>
+
+    BankCode:
+      type: string
+      pattern: '^\d+$'
+      description: |
+        Código de Banco. A continuación listamos los códigos para cada país.
+
+        - Para `AR` este parámetro **no es requerido**.
+
+        - Para `BR` este parámetro **no es requerido** si `account_number` esta en formato IBAN  o si se está validando una llave pix.
+        
+        - Para `CO` este parámetro **es requerido**.
+
+        - Para `CL` este parámetro **es requerido**.
+
+        - Para `EC` este parámetro **es requerido**.
+
+        - Para `MX` este parámetro **no es requerido**  si `account_number` esta en formato CLABE.
+
+        - Para `PE` este parámetro **no es requerido** si `account_number` esta en formato CCI.
+
+        - Para `US` este parámetro **es requerido**, corresponde al routing number y debe tener 9 caracteres.
+
+        - Para `UY` este parámetro **es requerido**.
+
+        A continuación se listan todos los bancos disponibles para validar cuentas.
+
+        ##### Lista de bancos en cada país:
+
+        <details>
+        <summary>&ensp;Brasil - <code>BR</code></summary>
+
+          - `001` BANCO DO BRASIL
+
+          - `003` BANCO DA AMAZÔNIA
+
+          - `004` BANCO DO NORDESTE
+
+          - `010` CREDICOAMO
+
+          - `012` BANCO INBURSA
+
+          - `016` CREDITRAN
+
+          - `021` BANESTES
+
+          - `025` BANCO ALFA
+
+          - `033` SANTANDER
+
+          - `037` BANCO DO ESTADO DO PARÁ
+
+          - `041` BANRISUL
+
+          - `047` BANESE
+
+          - `069` CREFISA
+
+          - `070` BANCO DE BRASÍLIA - BRB
+
+          - `077` BANCO INTER
+
+          - `079` BANCO ORIGINAL DO AGRONEGÓCIO
+
+          - `082` BANCO TOPAZIO
+
+          - `084` UNIPRIME DO NORTE DO PARANÁ
+
+          - `085` COOPERATIVA CENTRAL DE CRÉDITO URBANO
+
+          - `088` BANCO RANDON S.A.
+
+          - `089` COOPERATIVA DE CRÉDITO RURAL DA REGIÃO DA MOGIANA
+
+          - `095` BANCO CONFIDENCE DE CÂMBIO
+
+          - `097` CCC NOROESTE BRASILEIRO
+
+          - `098` CREDIALIANÇA
+
+          - `099` UNIPRIME CENTRAL
+
+          - `104` CAIXA ECONÔMICA
+
+          - `119` BANCO WESTERN UNION
+
+          - `121` BANCO AGIBANK S.A
+
+          - `125` BRASIL PLURAL
+
+          - `130` CARUANA SCFI
+
+          - `133` CONFEDERAÇÃO NAC DAS CCC SOL
+
+          - `136` UNICRED
+
+          - `144` BEXS
+
+          - `159` CASA DO CRÉDITO
+
+          - `174` PERNAMBUCANAS FINANCIADORA
+
+          - `183` SOCRED SCM
+
+          - `197` STONE PAGAMENTOS
+
+          - `208` BANCO BTG PACTUAL
+
+          - `212` ORIGINAL
+
+          - `213` BANCO ARBI
+
+          - `218` BANCO BS2
+
+          - `224` BANCO FIBRA
+
+          - `237` BRADESCO
+
+          - `243` BANCO MÁXIMA
+
+          - `246` BANCO ABC BRASIL
+
+          - `254` BANCO PARANA
+
+          - `260` NU PAGAMENTOS S.A.
+
+          - `269` HSBC BANCO DE INVESTIMENTO
+
+          - `273` SULCREDI - SÃO MIGUEL
+
+          - `274` MONEY PLUS SCMEPP
+
+          - `276` SENFF FINANCEIRA
+
+          - `279` CCR DE PRIMAVERA DO LESTE
+
+          - `281` COOPAVEL
+
+          - `286` SULCREDI - OURO
+
+          - `290` PAGSEGURO INTERNET S.A
+
+          - `299` SOROCRED CRÉDITO, FINANCIAMENTO E INVESTIMENTO
+
+          - `301` BPP INSTITUIÇÃO DE PAGAMENTO S.A.
+
+          - `310` VORTX DTVM
+
+          - `312` HSCM - SOCIEDADE DE CRÉDITO AO MICROEMPREENDEDOR E À EMPRESA DE PEQUENO PORTE LT
+
+          - `318` BANCO BMG
+
+          - `322` SULCREDI / CREDILUZ - ABELARDO LUZ
+
+          - `323` MERCADO PAGO
+
+          - `324` CARTOS SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `326` PARATI CFI S.A.
+
+          - `329` QI SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `330` BANCO BARI
+
+          - `332` ACESSO SOLUÇÕES DE PAGAMENTO S.A.
+
+          - `335` BANCO DIGIO S.A.
+
+          - `336` BANCO C6 S.A.
+
+          - `340` SUPER PAGAMENTOS
+
+          - `341` ITAÚ
+
+          - `348` BANCO XP S.A.
+
+          - `349` AMAGGI S.A.
+
+          - `350` CREHNOR LARANJEIRAS
+
+          - `355` ÓTIMO SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `358` MIDWAY S.A. - CRÉDITO, FINANCIAMENTO E INVESTIMENTO
+
+          - `359` ZEMA CRÉDITO, FINANCIAMENTO E INVESTIMENTO
+
+          - `362` CIELO S.A
+
+          - `364` EFÍ S.A
+
+          - `368` BANCO CSF
+
+          - `374` REALIZE CRÉDITO, FINANCIAMENTO E INVESTIMENTO S.A.
+
+          - `376` BANCO JP MORGAN
+
+          - `380` PICPAY SERVICOS S.A.
+
+          - `382` FIDÚCIA SOCIEDADE DE CRÉDITO AO MICROEMPREENDEDOR E À EMPRESA DE PEQUENO PORTE L
+
+          - `383` JUNO
+
+          - `384` GLOBAL FINANÇAS SOCIEDADE DE CRÉDITO AO MICROEMPREENDEDOR E À EMPRESA DE PEQUENO
+
+          - `389` MERCANTIL DO BRASIL
+
+          - `396` HUB PAGAMENTOS S.A
+
+          - `397` LISTO SOCIEDADE DE CREDITO DIRETO S.A.
+
+          - `401` IUGU SERVICOS NA INTERNET S/A
+
+          - `402` COBUCCIO SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `403` CORA SCD S.A.
+
+          - `404` SUMUP SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `406` ACCREDITO - SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `407` ÍNDIGO INVESTIMENTOS DISTRIBUIDORA DE TÍTULOS E VALORES MOBILIÁRIOS LTDA.
+
+          - `408` BÔNUSCRED SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `411` VIA CERTA FINANCIADORA S.A. - CRÉDITO, FINANCIAMENTO E INVESTIMENTOS
+
+          - `412` BANCO CAPITAL
+
+          - `413` BANCO BV S.A.
+
+          - `419` NUMBRS SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `421` LAR COOPERATIVA DE CRÉDITO - LAR CREDI
+
+          - `422` BANCO SAFRA
+
+          - `425` SOCINAL S.A. - CRÉDITO, FINANCIAMENTO E INVESTIMENTO
+
+          - `427` COOPERATIVA DE CREDITO DOS SERVIDORES DA UNIVERSIDADE FEDERAL DO ESPIRITO SANTO
+
+          - `428` CRED-SYSTEM SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `430` COOPERATIVA DE CREDITO RURAL SEARA - CREDISEARA
+
+          - `435` DELCRED SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `439` ID CORRETORA DE TÍTULOS E VALORES MOBILIÁRIOS S.A.
+
+          - `444` TRINUS SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `450` FITBANK INSTITUICAO DE PAGAMENTOS ELETRONICOS S.A.
+
+          - `452` CREDIFIT SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `457` UY3 SCD S/A
+
+          - `461` ASAAS IP S.A.
+
+          - `462` STARK SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `465` CAPITAL CONSIG SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `468` PORTOSEG S.A. - CREDITO, FINANCIAMENTO E INVESTIMENTO
+
+          - `478` GAZINCRED S.A. SOCIEDADE DE CRÉDITO, FINANCIAMENTO E INVESTIMENTO
+
+          - `481` SUPERLÓGICA SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `509` CELCOIN INSTITUICAO DE PAGAMENTO S.A.
+
+          - `511` MAGNUM SOCIEDADE DE CRÉDITO DIRETO S.A.
+
+          - `529` PINBANK BRASIL - PAGAMENTOS INTELIGENTES S.A.
+
+          - `534` EWALLY TECNOLOGIA E SERVICOS S.A.
+
+          - `536` NEON PAGAMENTOS S.A.
+
+          - `537` MICROCASH SOCIEDADE DE CRÉDITO AO MICROEMPREENDEDOR E À EMPRESA DE PEQUENO PORTE
+
+          - `546` U4CRYPTO SOLUCOES TECNOLOGICAS E FINANCEIRAS SA
+
+          - `600` BANCO LUSO BRASILEIRO
+
+          - `604` BANCO INDUSTRIAL
+
+          - `610` BANCO VR
+
+          - `612` BANCO GUANABARA
+
+          - `613` OMNI BANCO
+
+          - `623` BANCO PAN
+
+          - `630` BANCO SMARTBANK S.A.
+
+          - `633` BANCO RENDIMENTO
+
+          - `634` BANCO TRIÂNGULO
+
+          - `637` BANCO SOFISA
+
+          - `653` BANCO INDUSVAL
+
+          - `654` BANCO RENNER
+
+          - `655` VOTORANTIN / NEON
+
+          - `707` DAYCOVAL
+
+          - `712` BANCO OURINVEST
+
+          - `741` BANCO RIBEIRÃO PRETO S.A.
+
+          - `743` BANCO SEMEAR
+
+          - `745` CITIBANK
+
+          - `746` BANCO MODAL
+
+          - `748` SICREDI
+
+          - `755` BANK OF AMERICA MERRILL LYNCH
+
+          - `756` SICOOB
+
+          - `757` BANCO KEB HANA
+        </details>
+
+        <details>
+        <summary>&ensp;Colombia - <code>CO</code></summary>
+        
+        - `001` BANCO DE BOGOTA  
+
+        - `005` BANCAFE  
+
+        - `006` BANCO SANTANDER COLOMBIA S.A.  
+
+        - `007` BANCOLOMBIA S.A.  
+
+        - `009` CITIBANK  
+
+        - `012` BANCO SUDAMERIS COLOMBIA  
+
+        - `042` BANCO SCOTIABANK COLPATRIA 
+
+        - `023` BANCO DE OCCIDENTE  
+
+        - `030` BANCO CAJA SOCIAL
+
+        - `031` BANCOLDEX - BANCO DE COMERCIO EXTERIOR DE COLOMBIA 
+
+        - `039` BANCO DAVIVIENDA
+        
+        - `049` AV VILLAS
+        
+        - `052` BANCAMIA S.A
+
+        - `053` BANCO W S.A.
+
+        - `054` BANCO COOMEVA S.A.
+
+        - `055` BANCO FINANDINA
+
+        - `056` Banco Falabella S.A.
+
+        - `057` Banco Pichincha S.A.
+
+        - `062` Mibanco S.A.
+
+        - `063` BANCO SERFINANZA S.A.
+
+        - `064` BANCO J.P. MORGAN COLOMBIA S.A
+
+        - `065` Lulo Bank S.A.
+
+        - `066` Banco BTG Pactual Colombia S.A.
+
+        - `067` BANCO UNIÓN S.A.
+
+        - `068` BANCO CONTACTAR S.A.
+
+        </details>
+
+        <details>
+        <summary>&ensp;Chile - <code>CL</code></summary>
+        
+        - `0001` BANCO DE CHILE 
+
+        - `0009` BANCO INTERNACIONAL
+
+        - `0012` BANCO ESTADO
+       
+        - `0014` SCOTIABANK
+
+        - `0016` BCI
+
+        - `0028` BANCO BICE
+
+        - `0031` HSBC BANK
+
+        - `0037` SANTANDER
+
+        - `0039` BANCO ITAÚ
+        
+        - `0041` JPMORGAN CHASE        
+
+        - `0049` SECURITY
+
+        - `0051` BANCO FALABELLA
+
+        - `0053` BANCO RIPLEY
+
+        - `0055` BANCO CONSORCIO
+
+        - `0672` COOPEUCH
+
+        - `0729` PREPAGO LOS HEROES
+
+        - `0730` TENPO PREPAGO
+
+        - `0732` TAPP CAJA LOS ANDES
+
+        - `0875` MERCADO PAGO
+
+        </details>
+
+        <details>
+        <summary>&ensp;Ecuador - <code>EC</code></summary>
+        
+        - `0010` BANCO PICHINCHA
+        
+        - `0017` BANCO GUAYAQUIL
+        
+        - `0029` BANCO DE LOJA 
+        
+        - `0030` BANCO PACIFICO
+
+        - `0032` BANCO INTERNACIONAL 
+
+        - `0034` BANCO AMAZONAS
+
+        - `0035` BANCO DEL AUSTRO 
+        
+        - `0036` PRODUBANCO
+
+        - `0037` BANCO BOLIVARIANO 
+
+        - `0042` BANCO GENERAL RUMINAHUI S.A. 
+
+        - `0059` BANCO SOLIDARIO 
+
+        - `0060` BANCO PROCREDIT S.A. 
+
+        - `0201` BANCO DELBANK S.A. 
+
+        - `0232` BANCO DINERS CLUB 
+
+        </details>
+
+        <details>
+        <summary>&ensp;México - <code>MX</code></summary>
+
+          - `002` BANAMEX
+
+          - `006` BANCOMEXT
+
+          - `009` BANOBRAS
+
+          - `012` BBVABANCOMER
+
+          - `014` SANTANDER
+
+          - `019` BANJERCITO
+
+          - `021` BANCO HSBC
+
+          - `030` BAJIO
+
+          - `036` INBURSA
+
+          - `042` MIFEL
+
+          - `044` SCOTIABANK
+
+          - `058` BANREGIO
+
+          - `059` INVEX
+
+          - `060` BANSI
+
+          - `062` AFIRME SA
+
+          - `072` BANORTE
+
+          - `106` BANK OF AMERICA
+
+          - `108` MUFG
+
+          - `110` JP MORGAN
+
+          - `112` BANCO MONEX
+
+          - `113` BANCO VE POR MAS SA
+
+          - `124` CITI MEXICO
+
+          - `126` CREDIT SUISSE
+
+          - `127` BANCO AZTECA
+
+          - `130` BANCO COMPARTAMOS
+
+          - `131` BANCO DE AHORRO FAMS
+
+          - `132` BANCO MULTIVA
+
+          - `133` BANCO ACTINVER
+
+          - `135` NAFIN
+
+          - `136` INTERCAM BANCO
+
+          - `137` BANCOPPEL
+
+          - `138` ABC CAPITAL
+
+          - `140` CONSUBANCO
+
+          - `141` VOLSKWAGEN BANK SA
+
+          - `143` CONSULTORIAINT BANCO
+
+          - `145` BANCO BASE SA
+
+          - `147` BANKAOOL
+
+          - `148` PAGATODO
+
+          - `150` BANCO INMOBILIARIO
+
+          - `151` DONDE BANCO
+
+          - `152` BANCREA
+
+          - `154` BANCO COVALTO
+
+          - `155` ICBC
+
+          - `156` SABADELL
+
+          - `157` SHINHAN
+
+          - `158` MIZUHO BANK
+
+          - `166` Banco del Bienestar
+
+          - `168` HIPOTECARIA FEDERAL
+
+          - `600` CASA BOLSA MONEX
+
+          - `601` CASA BOLSA GBM
+
+          - `613` MULTIVA CBOLSA
+
+          - `620` PROFUTURO GNP AFORE
+
+          - `634` FINCOMUN
+
+          - `636` HDI SEGUROS
+
+          - `638` AKALA
+
+          - `646` SOFOM STP
+
+          - `652` SOLUCION ASEA SFP
+
+          - `653` KUSPIT CASA DE BOLSA
+
+          - `656` UNGARA
+
+          - `659` OPCIONES EMPRESARIALES DEL NOROESTE
+
+          - `670` LIBERTAD
+
+          - `677` CAJA POP MEXICANA
+
+          - `684` TRANSFER
+
+          - `901` CLS
+
+        </details>
+
+        <details>
+        <summary>&ensp;Perú - <code>PE</code></summary>
+
+          - `002` BANCO DE CREDITO
+
+          - `003` INTERBANK
+
+          - `009` SCOTIABANK
+
+          - `011` BANCO_CONTINENTAL
+
+        Para los siguientes bancos solo se acepta numero de cuenta solo en formato CCI:
+          - `007` CITIBANK
+
+          - `018` BANCO_DE_LA_NACION
+
+          - `023` BANCO_DE_COMERCIO
+
+          - `035` BANCO_PICHINCHA
+
+          - `038` BANBIF
+
+          - `043` CREDISCOTIA
+
+          - `049` MI_BANCO
+
+          - `051` AGROBANCO
+
+          - `053` GNB
+
+          - `054` BANCO_FALABELLA
+
+          - `055` RIPLEY
+
+          - `056` SANTANDER
+
+          - `058` AZTECA
+
+          - `060` ICBC
+
+          - `061` JPMORGAN
+
+          - `802` CAJA_MUNICIPAL_DE_TRUJILLO
+
+          - `803` CAJA_MUNICIPAL_AREQUIPA
+
+          - `805` CAJA_SULLANA
+
+          - `806` CAJA_CUZCO
+
+          - `809` CAJA_ICA
+
+        </details>
+        
+        <details>
+        <summary>&ensp;Uruguay - <code>UY</code></summary>
+
+          - `000`  CITIBANK
+
+          - `001`  BROU
+
+          - `091` HIPOTECARIO(BHU)
+
+          - `110`  BANCO BANDES URUGUAY
+
+          - `113`  BANCO ITAU
+
+          - `128`  SCOTIABANK
+
+          - `137`  SANTANDER
+
+          - `153`  BBVA URUGUAY S.A.
+
+          - `157`  HSBC BANK URUGUAY
+
+          - `162`  HERITAGE
+
+          - `246`	NACION ARGENTINA
+
+          - `452`	PREX
+
+          - `815`  OCA BLUE
+
+          - `6917`	NUMMI S.A (MiDinero)
+        </details>
+
+        Para sandbox utilizar `999`  CÓDIGO DE BANCO FICTICIO
+    Currency:
+      type: string
+      pattern: '[A-Z]{3}'
+      description: Currency format ISO-4217
+    Country:
+      type: string
+      pattern: '[A-Z]{2}'
+      enum:
+        - AR
+        - BR
+        - CO
+        - CL
+        - EC
+        - MX
+        - PE
+        - US
+        - UY
+      description: |
+        Codigo de País en formato ISO-3166. Lista de códigos:
+
+          - `AR`: Argentina
+
+          - `BR`: Brasil
+        
+          - `CO`: Colombia
+
+          - `CL`: Chile
+
+          - `MX`: México
+
+          - `EC`: Ecuador
+
+          - `PE`: Perú
+
+          - `US`: USA
+
+          - `UY`: Uruguay
+    BranchCode:
+      type: string
+      description: |
+        Codigo de sucursal:
+
+          - Para `BR` DEBE ser el número de sucursal de la cuenta bancaria a validar (este parámetro **no es requerido** si `account_number` esta en formato IBAN o si se está validando una llave pix). Ejemplo: 1234. 
+
+          - Para `MX` **no es requerido** si `account_number` esta en formato CLABE.
+
+          - Para `AR`, `CO`, `CL` , `EC` , `PE`, `US` y `UY` este parámetro **no es requerido**.
+    ValidAccount:
+      type: object
+      properties:
+        valid:
+          type: boolean
+        country_code:
+          $ref: '#/components/schemas/Country'
+        account:
+          type: string
+        bank:
+          type: string
+        result:
+          type: object
+          properties:
+            valid:
+              type: boolean
+            message:
+              type: string
+            data:
+              type: object
+              properties:
+                document_type:
+                  type: string
+                document_number:
+                  type: string
+                beneficiary_name:
+                  type: string
+                account_currency:
+                  $ref: '#/components/schemas/Currency'
+                account_type:
+                  type: string
+                  enum:
+                    - SAVINGS
+                    - CHECKING
+    InvalidAccount:
+      type: object
+      properties:
+        valid:
+          type: boolean
+          default: false
+    ErrorMessage:
+      type: object
+      properties:
+        code:
+          type: integer
+        message:
+          type: string
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key required to make calls
+      name: X-API-Key
+      in: header
+  responses:
+    MissingAPIKey:
+      description: API Key esta faltando
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ValidAccount'
+              errors:
+                $ref: '#/components/schemas/ErrorMessage'
+          examples:
+            MissingAPIKey:
+              summary: API Key esta faltando
+              value: |
+                {
+                  "data": null,
+                  "errors": {
+                    "code": 401,
+                    "message": "Missing API key"
+                  }
+                }
+    ValidationPending:
+      description: Validation is in process. This error applies to Account Validation in Mexico where the response may not always be in real time.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ValidAccount'
+              errors:
+                $ref: '#/components/schemas/ErrorMessage'
+          examples:
+            ValidationPending:
+              summary: Validation is in process
+              value: |
+                {
+                  "data": null,
+                  "errors": {
+                    "code": 202,
+                    "message": "Validacion Pendiente"
+                  }
+                }
+    InvalidOrMissingParameters:
+      description: Parametros invalidos o faltantes.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ValidAccount'
+              errors:
+                $ref: '#/components/schemas/ErrorMessage'
+          examples:
+            InvalidParameters:
+              summary: Parametros invalidos
+              value: |
+                {
+                  "data": null,
+                  "errors": {
+                    "code": 400,
+                    "message": "Invalid parameter: account_number"
+                  }
+                }
+            MissingParameters:
+              summary: Parametros faltantes
+              value: |
+                {
+                  "data": null,
+                  "errors": {
+                    "code": 400,
+                    "message": "Missing parameter: account_number"
+                  }
+                }
+    InvalidAccount:
+      description: Cuenta invalida
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/InvalidAccount'
+              errors:
+                $ref: '#/components/schemas/ErrorMessage'
+          examples:
+            InvalidAccount:
+              summary: Cuenta invalida
+              value: |
+                {
+                  "data": { "valid": false },
+                  "errors": {
+                    "code": 404,
+                    "message": "Cuenta credito invalida"
+                  }
+                }
+    InternalError:
+      description: Un error interno ha ocurrido.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ValidAccount'
+              errors:
+                $ref: '#/components/schemas/ErrorMessage'
+          examples:
+            InternalError:
+              summary: Un error interno ha ocurrido
+              value: |
+                {
+                  "data": null,
+                  "errors": {
+                    "code": 500,
+                    "message": "Error Interno"
+                  }
+                }
+    CommunicationError:
+      description: Se encontro un error de comunicación con el banco destino
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ValidAccount'
+              errors:
+                $ref: '#/components/schemas/ErrorMessage'
+          examples:
+            CommunicationError:
+              summary: Error de comunicación
+              value: |
+                {
+                  "data": null,
+                  "errors": {
+                    "code": 503,
+                    "message": "Error de comunicación"
+                  }
+                }
+    BankUnavailable:
+      description: Banco no disponible. Prometeo no tiene conexión desarrollada con el banco solicitado.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ValidAccount'
+              errors:
+                $ref: '#/components/schemas/ErrorMessage'
+          examples:
+            BankUnavailable:
+              summary: Banco no disponible
+              value: |
+                {
+                  "data": null,
+                  "errors": {
+                    "code": 513,
+                    "message": "Banco proveedor no disponible"
+                  }
+                }
+    CountryUnavailable:
+      description: Pais no disponible. Prometeo no tiene ningun banco en el pais solicitado.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              data:
+                $ref: '#/components/schemas/ValidAccount'
+              errors:
+                $ref: '#/components/schemas/ErrorMessage'
+          examples:
+            CountryUnavailable:
+              summary: Pais no disponible
+              value: |
+                {
+                  "data": null,
+                  "errors": {
+                    "code": 514,
+                    "message": "Pais no disponible"
+                  }
+                }
+security:
+  - ApiKeyAuth: []
+paths:
+  /validate-account/:
+    post:
+      summary: Retorna detalles de la cuenta consultada.
+      description: |
+        Valida que una cuenta sea valida y retorna información asociada a su dueño.
+      tags:
+        - Validate account
+      security:
+        - APIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                account_number:
+                  $ref: '#/components/schemas/AccountNumber'
+                bank_code:
+                  $ref: '#/components/schemas/BankCode'
+                country_code:
+                  $ref: '#/components/schemas/Country'
+                branch_code:
+                  $ref: '#/components/schemas/BranchCode'
+                account_type:
+                  $ref: '#/components/schemas/AccountType'
+                document_number:
+                  $ref: '#/components/schemas/DocumentNumber'
+                document_type:
+                  $ref: '#/components/schemas/DocumentType'
+              required:
+                - account_number
+                - country_code
+            examples:
+              Valid account sandbox (AR):
+                value:
+                  account_number: '9990000100000000000000'
+                  country_code: AR
+              Invalid account sandbox (AR):
+                value:
+                  account_number: '9990000000000000000017'
+                  country_code: AR
+              Valid account sandbox (AR) - Alias:
+                value:
+                  account_number: 'prometeo.pruebas.mp'
+                  country_code: AR
+              Invalid account sandbox (AR) - Alias:
+                value:
+                  account_number: 'prometeofallo.pruebas.mp'
+                  country_code: AR
+              Valid account sandbox (BR) - IBAN:
+                value:
+                  account_number: 'BR7299999999010100000001001C1'
+                  country_code: BR
+                  document_number: '58.547.642/0001-95'
+              Invalid account sandbox (BR) - IBAN:
+                value:
+                  account_number: 'BR3899999999010100000001002C1'
+                  country_code: BR
+                  document_number: '58.547.642/0001-95'
+              Valid account sandbox (BR) - Local:
+                value:
+                  account_number: '1001'
+                  country_code: BR
+                  document_number: '58.547.642/0001-95'
+                  branch_code: '00001'
+                  bank_code: '999'
+                  account_type: CHECKING
+              Invalid account sandbox (BR) - Local:
+                value:
+                  account_number: '1002'
+                  country_code: BR
+                  document_number: '58.547.642/0001-95'
+                  branch_code: '00001'
+                  bank_code: '999'
+                  account_type: CHECKING
+              Valid account sandbox (CO) - Local:
+                value:
+                  account_number: '000000001'
+                  country_code: CO
+                  document_number: '123456789'
+                  document_type: CC
+                  bank_code: '1007'
+                  account_type: CHECKING
+              Invalid account sandbox (CO) - Local:
+                value:
+                  account_number: '3456789012'
+                  country_code: CO
+                  document_number: '456789123'
+                  document_type: CC
+                  bank_code: '1007'
+                  account_type: SAVINGS
+              Valid account sandbox (CL):
+                value:
+                  account_number: '000000000000011'
+                  bank_code: '999'
+                  country_code: CL
+                  document_type: RUT
+                  account_type: CHECKING
+                  document_number: '123456801'
+              Invalid account sandbox (CL):
+                value:
+                  account_number: '000000020000012'
+                  bank_code: '999'
+                  country_code: CL
+                  document_type: RUT
+                  account_type: CHECKING
+                  document_number: '123456801'
+              Valid account sandbox (CL) - Local:
+                value:
+                  account_number: '1513523451'
+                  country_code: CL
+                  document_number: '123456789'
+                  document_type: RUT
+                  bank_code: '0001'
+                  account_type: CHECKING
+              Invalid account sandbox (CL) - Local:
+                value:
+                  account_number: '1513523222'
+                  country_code: CL
+                  document_number: '456789123'
+                  document_type: RUT
+                  bank_code: '0001'
+                  account_type: SAVINGS
+              Valid account sandbox (MX) - CLABE:
+                value:
+                  account_number: '999000000000000001'
+                  country_code: MX
+              Invalid account sandbox (MX) - CLABE:
+                value:
+                  account_number: '999000000000000014'
+                  country_code: MX
+              Valid account sandbox (MX) - Local:
+                value:
+                  account_number: '0'
+                  branch_code: '000'
+                  bank_code: '999'
+                  country_code: MX
+              Invalid account sandbox (MX) - Local:
+                value:
+                  account_number: '1'
+                  branch_code: '000'
+                  bank_code: '999'
+                  country_code: MX
+              Valid account sandbox (PE) - CCI:
+                value:
+                  account_number: '99900000000000000030'
+                  country_code: PE
+              Invalid account sandbox (PE) - CCI:
+                value:
+                  account_number: '99900000000000000138'
+                  country_code: PE
+              Valid account sandbox (PE) - Local:
+                value:
+                  account_number: '000000000000000'
+                  bank_code: '999'
+                  country_code: PE
+              Invalid account sandbox (PE) - Local:
+                value:
+                  account_number: '000000000000001'
+                  bank_code: '999'
+                  country_code: PE
+              Valid account (US):
+                value:
+                  account_number: '111000000000000'
+                  bank_code: '999'
+                  country_code: US
+              Invalid account (US):
+                value:
+                  account_number: '111000000000002'
+                  bank_code: '999'
+                  country_code: US
+              Valid account sandbox (US):
+                value:
+                  account_number: '123443956'
+                  country_code: US
+                  bank_code: '123123123'
+              Invalid account sandbox (US):
+                value:
+                  account_number: '98765432'
+                  country_code: US
+                  bank_code: '000000001'
+              Valid account sandbox (UY):
+                value:
+                  account_number: '0000'
+                  bank_code: '999'
+                  country_code: UY
+              Invalid account sandbox (UY):
+                value:
+                  account_number: '0001'
+                  bank_code: '999'
+                  country_code: UY
+              Error Interno:
+                value:
+                  account_number: '0003'
+                  bank_code: '999'
+                  country_code: UY
+              Error de Comunicacion:
+                value:
+                  account_number: '0004'
+                  bank_code: '999'
+                  country_code: UY
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/ValidAccount'
+                  errors:
+                    $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                SuccessUYMiDinero:
+                  summary: Respuesta exitosa - UY - Mi Dinero
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '1287104'
+                      bank_code: '6917'
+                      country_code: UY
+                      branch_code: null
+                      document_type: null
+                      document_number: null
+                      beneficiary_name: 'DARIO LIMA'
+                      account_currency: [
+                                            "UYU",
+                                            "USD"
+                                        ]
+                      account_type: null
+                    errors: null
+                SuccessUYOther:
+                  summary: Respuesta exitosa - UY - Otros
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '00136048900002'
+                      bank_code: '001'
+                      country_code: 'UY'
+                      branch_code: null
+                      document_type: null
+                      document_number: null
+                      beneficiary_name: "MAR** FLORE**** GORDI**** BENÍ***"
+                      account_currency: [
+                                        "UYU",
+                                        "USD"
+                                    ]
+                      account_type: null
+                    errors: null
+                SuccessPEIBK:
+                  summary: Respuesta exitosa - PE - IBK / BBVA / CITI / Pichincha
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '01117900010008213094'
+                      bank_code: '011'
+                      country_code: 'PE'
+                      branch_code: null
+                      document_type: null 
+                      document_number: '20605172742'
+                      beneficiary_name: 'CONSULTORA LOMBARDIA SAC'
+                      account_currency: 'PEN'
+                      account_type: null
+                    errors: null
+                SuccessPEBCP:
+                  summary: Respuesta exitosa - PE - BCP
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '1931101888080'
+                      bank_code: '002'
+                      country_code: 'PE'
+                      branch_code: null
+                      document_type: null
+                      document_number: null
+                      beneficiary_name: 'LIGA PERUANA DE LUCHA CONTRA EL CANCER'
+                      account_currency: 'PEN'
+                      account_type: 'CHECKING'
+                    errors: null
+                SuccessPEScotia:
+                  summary: Respuesta exitosa - PE - Scotia
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '00904520132021581561'
+                      bank_code: '009'
+                      country_code: 'PE'
+                      branch_code: null
+                      document_type: null
+                      document_number: null
+                      beneficiary_name: "LU*** JO*** GI*** ZU***"
+                      account_currency: 'PEN'
+                      account_type: null
+                    errors: null
+                SuccessPEOther:
+                  summary: Respuesta exitosa - PE - Otros
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '03810110700071136128'
+                      bank_code: '038'
+                      country_code: 'PE'
+                      branch_code: null
+                      document_type: null
+                      document_number: null
+                      beneficiary_name: "CONSULTORA LOMBARDIA SAC"
+                      account_currency: 'PEN'
+                      account_type: null
+                    errors: null
+                SuccessBR:
+                  summary: Respuesta exitosa - BR - Cuenta bancaria
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '53544-3'
+                      bank_code: '748'
+                      country_code: BR
+                      branch_code: '119'
+                      document_type: 'CPF/CNPJ'
+                      document_number: '07.826.801/0001-50'
+                      beneficiary_name: 'ASSOCIACAO SICREDI OURO BRANCO'
+                      account_currency: 'BRL'
+                      account_type: 'CHECKING'
+                    errors: null
+                SuccessBRLlavePix:
+                  summary: Respuesta exitosa - BR - Llave Pix
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '1288000000977155615'
+                      bank_code: '27084098'
+                      country_code: BR
+                      branch_code: null
+                      document_type: 'CPF/CNPJ'
+                      document_number: '01058520237'
+                      beneficiary_name: 'ADRIANO CORREA DOS SANTOS'
+                      account_currency: 'BRL'
+                      account_type: 'CONTA_POUPANCA'
+                    errors: null
+                SuccessMX:
+                  summary: Respuesta exitosa - MX
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '404040406'
+                      bank_code: '012'
+                      country_code: MX
+                      branch_code: '180'
+                      document_type: 'RFC'
+                      document_number: 'CRM6702109K6'
+                      beneficiary_name: 'CRUZ ROJA MEXICANA'
+                      account_currency: 'MXP'
+                      account_type: null
+                    errors: null
+                SuccessCOBancolombia:
+                  summary: Respuesta exitosa - CO - Bancolombia
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '000000001'
+                      bank_code: '1007'
+                      country_code: CO
+                      branch_code: null
+                      document_type: 'CC'
+                      document_number: '123456789'
+                      beneficiary_name: "JU*** ERN*** PE*** ME***"
+                      account_currency: 'COP'
+                      account_type: 'CHECKING'
+                    errors: null
+                SuccessCOOther:
+                  summary: Respuesta exitosa - CO - Otros
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '0178417754'
+                      bank_code: '013'
+                      country_code: CO
+                      branch_code: null
+                      document_type: 'NIT'
+                      document_number: '901401497'
+                      beneficiary_name: 'BW ANALYTICS SAS'
+                      account_currency: 'COP'
+                      account_type: 'SAVINGS'
+                    errors: null
+                SuccessECPichincha:
+                  summary: Respuesta exitosa - EC - Pichincha
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '2100101057'
+                      bank_code: '0010'
+                      country_code: EC
+                      branch_code: null
+                      document_type: null
+                      document_number: null
+                      beneficiary_name: 'FUNDACION VISION MUNDIAL ECUADOR'
+                      account_currency: 'USD'
+                      account_type: Null
+                    errors: null
+                SuccessECOther:
+                  summary: Respuesta exitosa - EC - Otros
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '8271675900'
+                      bank_code: '0042'
+                      country_code: EC
+                      branch_code: null
+                      document_type: RUC
+                      document_number: "1791749677001"
+                      beneficiary_name: 'FUNDACION PROTECCION ANIMAL ECUADOR'
+                      account_currency: 'USD'
+                      account_type: "SAVINGS"
+                    errors: null
+                SuccessAr:
+                  summary: Respuesta existosa - AR
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '9990000100000000000000'
+                      bank_code: '999'
+                      country_code: AR
+                      branch_code: null
+                      document_type: CUIT
+                      document_number: '30-71515454-1'
+                      beneficiary_name: 'ROBERTO CARLOS'
+                      account_currency: 'ARS'
+                      account_type: CHECKING
+                SuccessCl:
+                  summary: Respuesta existosa - CL
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '140000000000000'
+                      bank_code: '999'
+                      country_code: CL
+                      branch_code: null
+                      document_type: RUT
+                      document_number: '14.123.456-9'
+                      beneficiary_name: 'JUAN PEREZ'
+                      account_currency: CLP
+                      account_type: SAVINGS
+                SuccessUS:
+                  summary: Respuesta existosa - US
+                  value:
+                    data:
+                      valid: true
+                      message: Cuenta valida
+                      account_number: '123000000000000'
+                      bank_code: '999'
+                      country_code: US
+                      branch_code: null
+                      document_type: SSN
+                      document_number: '123-45-6789'
+                      beneficiary_name: JOHN DOE
+                      account_currency: USD
+                      account_type: CHECKING
+        '202':
+          $ref: '#/components/responses/ValidationPending'
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '404':
+          $ref: '#/components/responses/InvalidAccount'
+        '500':
+          $ref: '#/components/responses/InternalError'
+        '503':
+          $ref: '#/components/responses/CommunicationError'
+        '513':
+          $ref: '#/components/responses/BankUnavailable'
+        '514':
+          $ref: '#/components/responses/CountryUnavailable'
