@@ -1,12 +1,13 @@
 import os
 from datetime import datetime
-from typing import Annotated, Optional, List
+from typing import Annotated, Optional, Any
 from pydantic import Field
 
 from prometeo import Client
 from prometeo.exceptions import PrometeoError
 from prometeo.banking.exceptions import BankingClientError
 from prometeo.curp import exceptions, Gender, State
+from prometeo.curp.models import QueryResult
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
 from mcp.server.fastmcp.exceptions import ToolError
@@ -39,7 +40,7 @@ _interactive_fields = {}
 
 # Tool: CURP direct query
 @mcp.tool()
-async def curp_query(curp: str) -> dict:
+async def curp_query(curp: str) -> QueryResult | dict:
     """Query an existing CURP"""
     try:
         return await client.curp.query(curp)
@@ -55,7 +56,7 @@ async def curp_reverse_query(
     first_surname: str,
     last_surname: str,
     gender: Gender
-) -> dict:
+) -> QueryResult | dict:
     """Query a CURP using personal data"""
     try:
         parsed_birthdate = datetime.strptime(birthdate, "%Y-%m-%d")
@@ -172,7 +173,7 @@ async def banking_login(provider: str, username: str, password: str, session_key
         return {"status": "error", "message": str(e)}
 
 @mcp.tool()
-async def banking_get_accounts(session_key: str) -> dict:
+async def banking_get_accounts(session_key: str) -> Any:
     """Get list of accounts for an active session."""
     if not _active_sessions.get(session_key):
         return {"status": "error", "message": "Invalid or expired session_id"}
@@ -183,7 +184,7 @@ async def banking_get_accounts(session_key: str) -> dict:
         return {"status": "error", "message": str(e)}
 
 @mcp.tool()
-async def banking_get_movements(session_key: str, account_number: str, currency_code: str, start_date: datetime, end_date: datetime) -> dict:
+async def banking_get_movements(session_key: str, account_number: str, currency_code: str, start_date: datetime, end_date: datetime) -> Any:
     """Get movements for an account in a date range."""
     if not _active_sessions.get(session_key):
         return {"status": "error", "message": "Invalid or expired session_id"}
@@ -201,7 +202,7 @@ async def banking_get_movements(session_key: str, account_number: str, currency_
         return {"status": "error", "message": f"Invalid date format: {str(e)}"}
 
 @mcp.tool()
-async def banking_logout(session_key: str) -> dict:
+async def banking_logout(session_key: str) -> dict | None:
     """Logout of the current session."""
     if not _active_sessions.get(session_key):
         return {"status": "error", "message": "Invalid or expired session_id"}
