@@ -126,6 +126,52 @@ prometeo_server_tool = Tool.from_function(
 
 ---
 
+##  🛠 Tools
+
+### CURP Query Tools
+
+#### `curp_query`
+
+Allows you to validate and retrieve information associated with an existing CURP (Clave Única de Registro de Población) by providing the CURP code directly. This function is essential for verifying Mexican identity documents and obtaining associated personal data.
+
+#### `curp_reverse_query`
+
+Enables retrieval of a CURP by providing personal demographic data instead of the CURP itself. This function requires name, surnames, gender, birthdate, and state of registration to find the corresponding CURP.
+
+### Account Validation Tools
+
+#### `validate_account`
+
+Validates bank account information across multiple Latin American countries (Argentina, Brazil, Colombia, Chile, Ecuador, Mexico, Peru, Uruguay) and the United States. This function verifies if an account exists and returns details about the account holder. It handles various account number formats including CLABE (Mexico), CBU/CVU (Argentina), CCI (Peru), and PIX keys (Brazil).
+
+#### `get_validation_result`
+
+Retrieves the status or result of a previously initiated account validation request. This is particularly useful for asynchronous validations that may take time to process through banking systems.
+
+
+#### `get_tasks`
+
+Retrieves information about system tasks and their statuses. This function is useful for monitoring background processes and understanding the overall system state.
+
+### Banking Connection Tools
+
+#### `banking_login`
+Establishes a connection with a banking provider by authenticating user credentials. It handles multi-factor authentication scenarios by returning a session key that can be used for subsequent operations. If two-factor authentication is required, the function signals that an OTP (One-Time Password) is needed.
+
+#### `banking_get_accounts`
+
+Retrieves a list of all accounts associated with an authenticated banking session. This provides account numbers, types, balances, and other relevant details once a user is successfully logged in.
+
+#### `banking_get_movements`
+
+Obtains transaction history (movements) for a specific account within a defined date range. This function requires an active session key, account number, currency code, and the desired date range for the transactions.
+
+#### `banking_logout`
+
+Securely terminates an active banking session, ensuring proper cleanup of authentication tokens and session data.
+
+---
+
 ### 💡 Prompt Examples
 
 To see how to interact with this MCP server via supported LLMs, check out:

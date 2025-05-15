@@ -1,10 +1,12 @@
 import pytest
+import asyncio
 from unittest.mock import AsyncMock, MagicMock, patch
 from datetime import datetime
-
+from prometeo_mcp.background_validation import validation_tasks
 from prometeo_mcp.server import (
     curp_query,
     curp_reverse_query,
+    validate_account,
     validate_account,
     banking_login,
     banking_get_accounts,
@@ -63,12 +65,27 @@ async def test_curp_reverse_query_invalid_input():
     assert "error" in result
 
 
+
 @pytest.mark.asyncio
 async def test_validate_account_success():
-    with patch("prometeo_mcp.server.client.account_validation.validate", new=AsyncMock(return_value={"valid": True})) as mock_validate:
-        result = await validate_account("12345678", "MX")
-        assert result == {"valid": True}
-        mock_validate.assert_called_once()
+    with patch("prometeo_mcp.server.client.account_validation.validate", new_callable=AsyncMock) as mock_validate:
+        mock_validate.return_value = {"valid": True}
+        result = await validate_account(
+            account_number="12345678",
+            country_code="MX",
+            bank_code=None,
+            document_number=None,
+            document_type=None,
+            branch_code=None,
+            account_type=None,
+        )
+        validation_id = result["validation_id"]
+        assert result["status"] == 'started'
+        await asyncio.sleep(0.1)
+
+        stored = validation_tasks[validation_id]
+        assert stored["status"] == "done"
+        assert stored["result"] == {"valid": True}
 
 
 @pytest.mark.asyncio
