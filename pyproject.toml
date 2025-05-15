@@ -1,6 +1,6 @@
 [project]
 name = "prometeo-mcp"
-version = "0.1.0-beta.2"
+version = "0.1.0-beta.3"
 description = "Prometeo MCP server interface for testing and integration with LLMs."
 readme = "README.md"
 requires-python = ">=3.11"
@@ -9,8 +9,9 @@ authors = [{ name = "Prometeo API", email = "dev@prometeoapi.com" }]
 dependencies = [
     "pydantic>=2.11",
     "mcp[cli]>=1.6.0",
-    "prometeo==2.0.2",
+    "prometeo==2.0.3",
     "python-dotenv>=1.1.0",
+    "pyyaml>=6.0.2",
 ]
 
 [project.optional-dependencies]
