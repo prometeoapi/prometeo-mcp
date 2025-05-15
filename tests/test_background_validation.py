@@ -70,9 +70,10 @@ async def test_create_validation_task_failure():
 
     result = get_validation_status(task_id)
     assert result["status"] == "error"
-    assert "Validation failed" in result["error"]
+    assert "Validation failed" in result["message"]
 
 
 def test_get_unknown_validation_id():
     result = get_validation_status("non-existent-id")
-    assert result == {"status": "unknown"}
+    assert "Validation not found" in result["message"]
+    assert result["status"] == "unknown"
