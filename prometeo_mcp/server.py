@@ -1,12 +1,20 @@
 import os
 from datetime import datetime
-from typing import Optional, List
+from typing import Annotated, Optional, List
+from pydantic import Field
 
 from prometeo import Client
+from prometeo.exceptions import PrometeoError
 from prometeo.banking.exceptions import BankingClientError
 from prometeo.curp import exceptions, Gender, State
 from mcp.server.fastmcp import FastMCP
 from dotenv import load_dotenv
+from mcp.server.fastmcp.exceptions import ToolError
+
+from prometeo_mcp.background_validation import create_validation_task, get_validation_status, validation_tasks
+from prometeo_mcp.utils import get_param_description
+
+from httpx import Timeout
 
 
 # Load .env file from project root
@@ -21,9 +29,11 @@ PROMETEO_API_KEY = os.environ.get("PROMETEO_API_KEY")
 PROMETEO_ENVIRONMENT = os.environ.get("PROMETEO_ENVIRONMENT", "sandbox")
 if not PROMETEO_API_KEY:
     raise RuntimeError("PROMETEO_API_KEY environment variable is not set")
+HTTPX_TIMEOUT = Timeout(90.0)
+
 
 # Initialize Prometeo client
-client = Client(api_key=PROMETEO_API_KEY, environment=PROMETEO_ENVIRONMENT)
+client = Client(api_key=PROMETEO_API_KEY, environment=PROMETEO_ENVIRONMENT, timeout=HTTPX_TIMEOUT)
 _active_sessions = {}
 _interactive_fields = {}
 
@@ -39,47 +49,99 @@ async def curp_query(curp: str) -> dict:
 # Tool: CURP reverse query
 @mcp.tool()
 async def curp_reverse_query(
-    state: str | State,
+    state: State,
     birthdate: str,
     name: str,
     first_surname: str,
     last_surname: str,
-    gender: str
+    gender: Gender
 ) -> dict:
     """Query a CURP using personal data"""
     try:
-        parsed_state = State(state.upper())
-        parsed_gender = Gender(gender.upper())
         parsed_birthdate = datetime.strptime(birthdate, "%Y-%m-%d")
         return await client.curp.reverse_query(
-            parsed_state, parsed_birthdate, name, first_surname, last_surname, parsed_gender
+            state, parsed_birthdate, name, first_surname, last_surname, gender
         )
     except (KeyError, ValueError) as e:
         return {"error": f"Invalid input: {str(e)}"}
     except exceptions.CurpError as e:
         return {"error": f"CURP does not exist: {e.message}"}
 
-# Tool: Validate Accounts
+
 @mcp.tool()
 async def validate_account(
-    account_number: str,
-    country_code: str,
-    bank_code: Optional[str] = None,
-    document_number: Optional[str] = None,
-    document_type: Optional[str] = None,
-    branch_code: Optional[str] = None,
-    account_type: Optional[str] = None,
+    account_number: Annotated[
+        str,
+        Field(
+            description=get_param_description("account_number")
+        ),
+    ],
+    country_code: Annotated[
+        str,
+        Field(
+            description=get_param_description("country_code")
+        ),
+    ],
+    bank_code: Annotated[
+        Optional[str],
+        Field(
+            description=get_param_description("bank_code")
+        ),
+    ] = None,
+    document_number: Annotated[
+        Optional[str],
+        Field(
+            description=get_param_description("document_number")
+        ),
+    ] = None,
+    document_type: Annotated[
+        Optional[str],
+        Field(
+            description=get_param_description("document_type")
+        ),
+    ] = None,
+    branch_code: Annotated[
+        Optional[str],
+        Field(
+            description=get_param_description("branch_code")
+        ),
+    ] = None,
+    account_type: Annotated[
+        Optional[str],
+        Field(
+            description=get_param_description("account_type")
+        ),
+    ] = None,
 ):
     """Validate an account with Prometeo"""
-    return await client.account_validation.validate(
-        account_number=account_number,
-        country_code=country_code,
-        bank_code=bank_code,
-        document_number=document_number,
-        document_type=document_type,
-        branch_code=branch_code,
-        account_type=account_type,
-    )
+    try:
+        validation_id = create_validation_task(
+            client,
+            account_number=account_number,
+            country_code=country_code,
+            bank_code=bank_code,
+            document_number=document_number,
+            document_type=document_type,
+            branch_code=branch_code,
+            account_type=account_type,
+        )
+        return {
+            "validation_id": validation_id,
+            "status": "started",
+            "message": "Validation is being processed in background",
+        }
+    except PrometeoError as e:
+        return {"status": "error", "message": str(e)}
+
+@mcp.tool()
+async def get_validation_result(validation_id: str):
+    """Check the status or result of an account validation"""
+    return get_validation_status(validation_id)
+
+
+@mcp.tool()
+async def get_tasks():
+    return validation_tasks
 
 
 @mcp.tool()
