@@ -1,0 +1,605 @@
+openapi: 3.1.0
+info:
+  title: SUNAT API
+  version: '1.1'
+  description: Endpoints para la api del SUNAT
+  contact:
+    email: info@prometeoapi.com
+    name: Prometeo
+    url: 'https://prometeoapi.com'
+servers:
+  - url: 'https://fiscal.prometeoapi.net/'
+    variables: {}
+    description: Pre-Production and Production
+  - url: 'https://fiscal.sandbox.prometeoapi.com/'
+    variables: {}
+    description: Sandbox
+components:
+  schemas:
+    Date:
+      type: string
+      pattern: '\d\d/\d\d/\d{4}'
+      description: Fecha en formato DD/MM/YYYY
+    ErrorMessage:
+      type: object
+      properties:
+        status:
+          type: string
+          default: error
+        message:
+          type: string
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key necesaria para hacer llamadas
+      name: X-API-Key
+      in: header
+    SessionKeyAuth:
+      type: apiKey
+      description: Clave de sesión que identifica al usuario en el SAT
+      name: session_key
+      in: query
+  responses:
+    MissingAPIKey:
+      description: Falta API Key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example: |
+            {
+              "status": "error",
+              "message": "Missing API key"
+            }
+    InvalidOrMissingParameters:
+      description: Parámetros inválidos o ausentes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example: |
+            {
+              "status": "error",
+              "message": "Invalid parameters: date_end"
+            }
+    MissingCredentials:
+      description: Faltan credenciales
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example:
+            status: missing_credentials
+            missing_fields:
+              - password
+security:
+  - ApiKeyAuth: []
+    SessionKeyAuth: []
+paths:
+  /login/:
+    post:
+      summary: Login
+      description: |
+        Inicia sesión con el SUNAT
+      tags:
+        - Autenticación
+      security:
+        - APIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  description: 'Proveedor de datos, debe ser siempre `sunat`'
+                  default: sunat
+                document_type:
+                  type: string
+                  default: ruc
+                  description: |
+                    Tipo de documento
+                    - `dni` DNI
+                    - `ruc` RUC
+                  enum:
+                    - dni
+                    - ruc
+                dni:
+                  type: string
+                  description: DNI. Requerido cuando `document_type` es `dni`
+                ruc:
+                  type: string
+                  description: RUC. Requerido cuando `document_type` es `ruc`
+                username:
+                  type: string
+                  description: Usuario. Requerido cuando `document_type` es `ruc`
+                password:
+                  type: string
+                  description: Contraseña
+              required:
+                - document_type
+                - password
+            examples:
+              Login RUC sandbox:
+                value:
+                  provider: sunat
+                  document_type: ruc
+                  ruc: 12345678911
+                  username: sandbox_username
+                  password: sandbox_password
+              Login DNI sandbox:
+                value:
+                  provider: sunat
+                  document_type: dni
+                  dni: 123456789
+                  password: sandbox_password
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  session_key:
+                    type: string
+                    description: |
+                      Es el identificador que se utilizará para el resto de tus consultas al SUNAT
+              examples:
+                Success:
+                  summary: Login exitoso
+                  value:
+                    status: logged_in
+                    key: 163d06b2-3378-4383-9868-71c2b6fb28da
+                MissingCredentials:
+                  summary: Faltan credenciales
+                  value:
+                    status: missing_credentials
+                    missing_fields:
+                      - password
+                WrongCredentials:
+                  summary: Credenciales incorrectas
+                  value:
+                    status: wrong_credentials
+        '400':
+          $ref: '#/components/responses/MissingCredentials'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /tax-report/send/:
+    post:
+      summary: Reporte Tributario para Terceros
+      tags:
+        - Reporte tributario para terceros
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Email a donde se enviará el reporte tributario.
+              required:
+                - email
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Mensaje de status
+                  status:
+                    type: string
+              example:
+                status:
+                  message: El reporte solicitado se está procesando.  Terminada dicha acción el mismo estará en la bandeja de correo ingresada.
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /income-report/send/:
+    post:
+      summary: Envío por mail del Reporte de Rentas y Retenciones
+      description: Envía por mail el Reporte de Rentas y Retenciones del usuario
+      tags:
+        - Reporte rentas y retenciones
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Email a donde se enviará el reporte de rentas y retenciones.
+                year:
+                  type: integer
+                  description: Año de ejercicio a consultar.
+              required:
+                - email
+                - year
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Mensaje de status
+                  status:
+                    type: string
+              example:
+                status: success
+                result:
+                  message: El reporte ha sido generado satisfactoriamente
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /income-report/:
+    parameters:
+      - in: query
+        name: year
+        description: Año de ejercicio a consultar.
+        schema:
+          type: integer
+        required: true
+    get:
+      summary: Descarga del Reporte de Rentas y Retenciones
+      description: Descarga del Reporte de Rentas y Retenciones
+      tags:
+        - Reporte rentas y retenciones
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    type: object
+                    properties:
+                      pdf_url:
+                        type: string
+                  status:
+                    type: string
+              example:
+                report:
+                  pdf_url: /pdf/3f3549ef9831aff9268154d14898593d.pdf
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /declarations-report/:
+    parameters:
+      - in: query
+        name: declaration_type
+        description: |
+          Tipo de declaración
+          - `determinative`: Declaraciones determinativas y pagos
+          - `informative`: Declaraciones informativas
+        schema:
+          type: string
+          default: determinative
+          enum:
+            - determinative
+            - informative
+        required: true
+      - in: query
+        name: form_number
+        description: Número de formulario (vacío para buscar todos los formularios)
+        schema:
+          type: string
+        allowEmptyValue: true
+        required: true
+      - in: query
+        name: paid_amount
+        description: |
+          Importe pagado
+          - `gte`: Mayor igual a cero
+          - `gt`: Mayor a cero
+          - `eq`: Igual a cero
+        schema:
+          type: string
+          default: gte
+          enum:
+            - gte
+            - gt
+            - eq
+        required: true
+      - in: query
+        name: query_by
+        description: |
+          Tipo de fecha de consulta
+          - `period`: Periodo tributario
+          - `presentation`: Fecha de presentación
+        schema:
+          type: string
+          enum:
+            - period
+            - presentation
+        required: true
+      - in: query
+        name: date_start
+        description: Fecha inicial
+        schema:
+          $ref: '#/components/schemas/Date'
+        required: true
+        allowReserved: true
+      - in: query
+        name: date_end
+        description: Fecha final
+        schema:
+          $ref: '#/components/schemas/Date'
+        required: true
+        allowReserved: true
+    get:
+      summary: Descarga del Reporte de Declaraciones y Pagos
+      description: Descarga del Reporte de Declaraciones y Pagos
+      tags:
+        - Reporte declaraciones y pagos
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    type: object
+                    properties:
+                      pdf_url:
+                        type: string
+                  status:
+                    type: string
+              example:
+                report:
+                  pdf_url: /pdf/3f3549ef9831aff9268154d14898593d.pdf
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /declarations-report/send/:
+    post:
+      summary: Envío por mail del Reporte de Declaraciones y Pagos
+      description: Envío por mail del Reporte de Declaraciones y Pagos
+      tags:
+        - Reporte declaraciones y pagos
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Email a donde se enviará el reporte de declaraciones y pagos.
+                declaration_type:
+                  description: |
+                    Tipo de declaración
+                    - `determinative`: Declaraciones determinativas y pagos
+                    - `informative`: Declaraciones informativas
+                  type: string
+                  default: determinative
+                  enum:
+                    - determinative
+                    - informative
+                form_number:
+                  description: Número de formulario (vacío para buscar todos los formularios)
+                  type: string
+                paid_amount:
+                  description: |
+                    Importe pagado
+                    - `gte`: Mayor igual a cero
+                    - `gt`: Mayor a cero
+                    - `eq`: Igual a cero
+                  type: string
+                  default: gte
+                  enum:
+                    - gte
+                    - gt
+                    - eq
+                query_by:
+                  description: |
+                    Tipo de fecha de consulta
+                    - `period`: Periodo tributario
+                    - `presentation`: Fecha de presentación
+                  type: string
+                  enum:
+                    - period
+                    - presentation
+                date_start:
+                  $ref: '#/components/schemas/Date'
+                date_end:
+                  $ref: '#/components/schemas/Date'
+              required:
+                - email
+                - declaration_type
+                - paid_amount
+                - query_by
+                - date_start
+                - date_end
+                - form_number
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Mensaje de status
+                  status:
+                    type: string
+              example:
+                status: success
+                result:
+                  message: El reporte ha sido generado satisfactoriamente
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /retentions-report/:
+    parameters:
+      - in: query
+        name: query_essalud
+        description: Consultar EsSalud
+        schema:
+          type: boolean
+          default: true
+        required: true
+      - in: query
+        name: query_onp
+        description: Consultar ONP
+        schema:
+          type: boolean
+          default: true
+        required: true
+      - in: query
+        name: query_renta
+        description: Consultar Renta
+        schema:
+          type: boolean
+          default: true
+        required: true
+      - in: query
+        name: date_start
+        description: Fecha inicial
+        schema:
+          $ref: '#/components/schemas/Date'
+        required: true
+        allowReserved: true
+      - in: query
+        name: date_end
+        description: Fecha final
+        schema:
+          $ref: '#/components/schemas/Date'
+        required: true
+        allowReserved: true
+    get:
+      summary: Descarga del Reporte de Contribuciones y Retenciones
+      description: Descarga del Reporte de Contribuciones y Retenciones
+      tags:
+        - Reporte contribuciones y retenciones
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  report:
+                    type: object
+                    properties:
+                      pdf_url:
+                        type: string
+                  status:
+                    type: string
+              example:
+                report:
+                  download_url: /download/3f3549ef9831aff9268154d14898593d.xls
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /retentions-report/send/:
+    post:
+      summary: Envío por mail del Reporte de Contribuciones y Retenciones
+      description: Envío por mail del Reporte de Contribuciones y Retenciones
+      tags:
+        - Reporte contribuciones y retenciones
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  description: Email a donde se enviará el reporte de contribuciones y retenciones.
+                query_essalud:
+                  description: Consultar EsSalud
+                  type: boolean
+                  default: true
+                query_onp:
+                  description: Consultar ONP
+                  type: boolean
+                  default: true
+                query_renta:
+                  description: Consultar Renta
+                  type: boolean
+                  default: true
+                date_start:
+                  $ref: '#/components/schemas/Date'
+                date_end:
+                  $ref: '#/components/schemas/Date'
+              required:
+                - email
+                - query_essalud
+                - query_onp
+                - query_renta
+                - date_start
+                - date_end
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  result:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                        description: Mensaje de status
+                  status:
+                    type: string
+              example:
+                status: success
+                result:
+                  message: El reporte ha sido generado satisfactoriamente
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'

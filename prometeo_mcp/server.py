@@ -9,12 +9,12 @@ from prometeo.banking.exceptions import BankingClientError
 from prometeo.curp import exceptions, Gender, State
 from prometeo.curp.models import QueryResult
 from mcp.server.fastmcp import FastMCP
+import mcp.types as types
 from dotenv import load_dotenv
 from mcp.server.fastmcp.exceptions import ToolError
 
 from prometeo_mcp.background_validation import create_validation_task, get_validation_status, validation_tasks
 from prometeo_mcp.utils import get_param_description
-
 from httpx import Timeout
 
 
@@ -31,7 +31,7 @@ PROMETEO_ENVIRONMENT = os.environ.get("PROMETEO_ENVIRONMENT", "sandbox")
 if not PROMETEO_API_KEY:
     raise RuntimeError("PROMETEO_API_KEY environment variable is not set")
 HTTPX_TIMEOUT = Timeout(90.0)
-
+OPENAPI_PATH = "./prometeo_mcp/docs"
 
 # Initialize Prometeo client
 client = Client(api_key=PROMETEO_API_KEY, environment=PROMETEO_ENVIRONMENT, timeout=HTTPX_TIMEOUT)
@@ -212,6 +212,15 @@ async def banking_logout(session_key: str) -> dict | None:
     except BankingClientError as e:
         return {"status": "error", "message": str(e)}
 
+@mcp.resource("openapi://")
+async def list_openapi_resources() -> list[types.Resource]:
+    return [ types.Resource(uri=f"openapi://{i}", name=i, mimeType="application/yaml") for i in os.listdir(OPENAPI_PATH) if i.endswith(".yml")]
+
+@mcp.resource("openapi://{document_id}")
+async def read_openapi_resource(document_id: str) -> str:
+    with open(f"{OPENAPI_PATH}/{document_id}.yml", "r") as f:
+        return f.read()
+    raise ValueError("Resource not found")
 
 # Start the server
 if __name__ == "__main__":

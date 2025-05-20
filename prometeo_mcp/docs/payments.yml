@@ -1,0 +1,1035 @@
+openapi: 3.0.3
+info:
+  title: Payment Intent API
+  version: 1.0.0
+  description: This is a Payment Intent API documentation.
+  contact:
+    email: info@prometeoapi.com
+    name: Prometeo
+    url: 'https://prometeoapi.com'
+servers:
+  - url: 'https://payment.prometeoapi.net'
+    variables: {}
+    description: Production
+paths:
+  /api/v1/payment-intent/:
+    post:
+      summary: Create payment intent
+      operationId: payment_intent_create
+      description: Create payment intent
+      tags:
+      - Payment Intent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentIntentCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentIntentCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentIntentCreate'
+        required: true
+      security:
+        - APIKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntentCreateResponse'
+          description: Payment intent created
+        '400':
+          description: Bad request (some invalid field)
+  /api/v1/payment-intent/{id}:
+    get:
+      summary: Get payment intent
+      operationId: payment_intent_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        required: true
+      tags:
+      - Payment Intent
+      security:
+        - APIKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentIntentRetrieve'
+          description: ''
+  /api/v1/payment-link/:
+    post:
+      summary: Create a payment link
+      operationId: payment_link_create
+      description: Create a payment link
+      tags:
+      - Payment Link
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkCreate'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkCreate'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkCreate'
+        required: true
+      security:
+        - APIKeyAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentLinkCreateResponse'
+          description: Payment link created
+        '400':
+          description: Bad request (some invalid field)
+  /api/v1/payment-link/{short_id}:
+    get:
+      summary: Retrieve payment link details
+      operationId: payment_link_retrieve
+      description: Retrieve payment link details
+      parameters:
+      - in: path
+        name: short_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - Payment Link
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentLinkRetrieve'
+          description: ''
+        '400':
+          description: Wrong payment link ID format
+        '404':
+          description: Link was not found or its status is expired, canceled or already
+            paid
+  /api/v1/payment-link/cancel:
+    post:
+      summary: Cancel a list of payment links
+      operationId: payment_link_cancel_create
+      description: Cancel a list of payment links
+      tags:
+      - Payment Link
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkBulkCancel'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkBulkCancel'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkBulkCancel'
+        required: true
+      security:
+        - APIKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentLinkBulkCancelResponse'
+          description: Payment links cancelled
+        '400':
+          description: Bad request (some invalid field)
+  /api/v1/payment-link/download:
+    post:
+      summary: Download payment links as CSV
+      operationId: payment_link_download_create
+      description: Download payment links as CSV
+      tags:
+      - Payment Link
+      parameters:
+        - $ref: '#/components/parameters/AmountEq'
+        - $ref: '#/components/parameters/AmountGt'
+        - $ref: '#/components/parameters/AmountGte'
+        - $ref: '#/components/parameters/AmountLt'
+        - $ref: '#/components/parameters/AmountLte'
+        - $ref: '#/components/parameters/AmountRange'
+        - $ref: '#/components/parameters/CreatedAt'
+        - $ref: '#/components/parameters/CreatedAtGt'
+        - $ref: '#/components/parameters/CreatedAtGte'
+        - $ref: '#/components/parameters/CreatedAtLt'
+        - $ref: '#/components/parameters/CreatedAtLte'
+        - $ref: '#/components/parameters/CreatedAtRange'
+        - $ref: '#/components/parameters/Ordering'
+        - $ref: '#/components/parameters/Paid'
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/StatusIn'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkList'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkList'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkList'
+        required: true
+      security:
+        - APIKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentLinkDownloadResponse'
+          description: ''
+  /api/v1/payment-link/list:
+    post:
+      summary: List payment links by widget ID
+      operationId: payment_link_list_create
+      description: List payment links by widget ID
+      tags:
+      - Payment Link
+      parameters:
+        - $ref: '#/components/parameters/AmountEq'
+        - $ref: '#/components/parameters/AmountGt'
+        - $ref: '#/components/parameters/AmountGte'
+        - $ref: '#/components/parameters/AmountLt'
+        - $ref: '#/components/parameters/AmountLte'
+        - $ref: '#/components/parameters/AmountRange'
+        - $ref: '#/components/parameters/CreatedAt'
+        - $ref: '#/components/parameters/CreatedAtGt'
+        - $ref: '#/components/parameters/CreatedAtGte'
+        - $ref: '#/components/parameters/CreatedAtLt'
+        - $ref: '#/components/parameters/CreatedAtLte'
+        - $ref: '#/components/parameters/CreatedAtRange'
+        - $ref: '#/components/parameters/Ordering'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Paid'
+        - $ref: '#/components/parameters/Search'
+        - $ref: '#/components/parameters/Status'
+        - $ref: '#/components/parameters/StatusIn'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkList'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkList'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PaymentLinkList'
+        required: true
+      security:
+        - APIKeyAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentLinkListResponse'
+          description: ''
+        '400':
+          description: The client can't list payment links for another widget, wrong
+            widget_ids format or missing widget_ids value
+components:
+  schemas:
+    Customer:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        document_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        document_number:
+          type: string
+          nullable: true
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+      required:
+      - name
+    CustomerCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        email:
+          type: string
+          format: email
+          nullable: true
+          maxLength: 254
+        document_type:
+          type: string
+          nullable: true
+          maxLength: 100
+        document_number:
+          type: string
+          nullable: true
+          maxLength: 100
+      required:
+      - name
+    PaginatedPaymentStatusHistoryList:
+      type: object
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentStatusHistory'
+    PaymentIntentCreate:
+      type: object
+      properties:
+        product_id:
+          type: string
+          format: uuid
+          description: Identifies a product, it can be a Widget or other product type
+          example: 0daf107a-2aa2-4661-a0ea-e7cf4ad2730c
+        product_type:
+          allOf:
+          - $ref: '#/components/schemas/ProductTypeEnum'
+          description: Identifies a product type
+        external_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: An external ID to identify a user. It can be the merchant's
+            user ID or other tracking ID
+          example: bf5d88cc-f60c-4612-8739-15b3244fcd04
+        concept:
+          type: string
+          nullable: true
+          description: Concept associated with the payment intent. This text will
+            be reflected as a concept in the bank issuing the payment
+          example: PROM123452 REF45424322
+        currency:
+          type: string
+          description: Currency associated with the amount of the payment intent
+          maxLength: 3
+          example: USD
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Amount to be charged to a payment intent
+          example: "1.00"
+        username:
+          type: string
+          nullable: true
+          description: The payer username in the merchant store
+          maxLength: 50
+          example: jdoe
+        document_number:
+          type: string
+          nullable: true
+          description: The document number of the payer with which you are registered
+            in the merchant's store
+          maxLength: 50
+          example: 8.410.692-1
+        reference:
+          type: string
+          nullable: true
+          description: Reference associated with the payment intent
+          maxLength: 128
+          example: Ticket 5841205-B
+      required:
+      - amount
+      - currency
+      - product_id
+    PaymentIntentCreateResponse:
+      type: object
+      properties:
+        intent_id:
+          type: string
+          format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        external_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: An external ID to identify a user. It can be the merchant's
+            user ID or other tracking ID
+          example: bf5d88cc-f60c-4612-8739-15b3244fcd04
+        concept:
+          type: string
+          nullable: true
+          description: Concept associated with the payment intent. This text will
+            be reflected as a concept in the bank issuing the payment
+          example: PROM123452 REF45424322
+        currency:
+          type: string
+          description: Currency associated with the amount of the payment intent
+          maxLength: 3
+          example: USD
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Amount to be charged to a payment intent
+          example: "1.00"
+        username:
+          type: string
+          nullable: true
+          description: The payer username in the merchant store
+          maxLength: 50
+          example: jdoe
+        document_number:
+          type: string
+          nullable: true
+          description: The document number of the payer with which you are registered
+            in the merchant's store
+          maxLength: 50
+          example: 8.410.692-1
+        reference:
+          type: string
+          nullable: true
+          description: Reference associated with the payment intent
+          maxLength: 128
+          example: Ticket 5841205-B
+      required:
+      - amount
+      - currency
+      - intent_id
+    Amount:
+      type: string
+      format: decimal
+      pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+    PaymentIntentRetrieve:
+      type: object
+      properties:
+        intent_id:
+          type: string
+          format: uuid
+          example: 3fa85f64-5717-4562-b3fc-2c963f66afa6
+        product_id:
+          type: string
+          format: uuid
+          description: Identifies a product, it can be a Widget or other product type
+          example: 0daf107a-2aa2-4661-a0ea-e7cf4ad2730c
+        product_type:
+          allOf:
+          - $ref: '#/components/schemas/ProductTypeEnum'
+          description: Identifies a product type
+        external_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: An external ID to identify a user. It can be the merchant's
+            user ID or other tracking ID
+          example: bf5d88cc-f60c-4612-8739-15b3244fcd04
+        concept:
+          type: string
+          nullable: true
+          description: Concept associated with the payment intent. This text will
+            be reflected as a concept in the bank issuing the payment
+          example: PROM123452 REF45424322
+        currency:
+          type: string
+          description: Currency associated with the amount of the payment intent
+          maxLength: 3
+          example: USD
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          description: Amount to be charged to a payment intent
+          example: "1.00"
+        status_history:
+          type: array
+          items:
+            $ref: '#/components/schemas/PaymentStatusHistory'
+        customer:
+          $ref: '#/components/schemas/Customer'
+        current_status:
+          type: string
+          nullable: true
+          readOnly: true
+          example: intent_approved
+        username:
+          type: string
+          nullable: true
+          description: The payer username in the merchant store
+          maxLength: 50
+          example: jdoe
+        document_number:
+          type: string
+          nullable: true
+          description: The document number of the payer with which you are registered
+            in the merchant's store
+          maxLength: 50
+          example: 8.410.692-1
+        reference:
+          type: string
+          nullable: true
+          description: Reference associated with the payment intent
+          maxLength: 128
+          example: Ticket 5841205-B
+      required:
+      - amount
+      - currency
+      - current_status
+      - customer
+      - intent_id
+      - product_id
+      - status_history
+    PaymentStatusHistory:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/StatusEnum'
+        message:
+          type: string
+          nullable: true
+        error_type:
+          type: string
+          nullable: true
+          maxLength: 250
+        error_code:
+          type: string
+          nullable: true
+          maxLength: 250
+        provider_code:
+          type: string
+          nullable: true
+          maxLength: 50
+        timestamp:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - status
+      - timestamp
+    PaymentLinkBulkCancel:
+      type: object
+      properties:
+        ids:
+          type: array
+          items:
+            type: string
+          maxItems: 50
+      required:
+      - ids
+    PaymentLinkBulkCancelResponse:
+      type: object
+      properties:
+        payment_links_canceled:
+          type: integer
+      required:
+      - payment_links_canceled
+    PaymentLinkCreate:
+      type: object
+      properties:
+        product_id:
+          type: string
+        external_id:
+          type: string
+          nullable: true
+          description: An external ID to identify a user. It can be the merchant's
+            user ID or other tracking ID
+          maxLength: 50
+        concept:
+          type: string
+          nullable: true
+          description: Concept associated with the payment link. This text will
+            be reflected as a concept in the bank issuing the payment
+          maxLength: 50
+        currency:
+          type: string
+          description: Currency associated with the amount of the payment link
+          maxLength: 3
+          example: USD
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          description: Amount to be charged to a payment link
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the payment link will expire
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email of the user that created the payment link
+          maxLength: 254
+        reusable:
+          type: boolean
+          description: If the payment link can be used multiple times
+        callback_url:
+          type: string
+          format: url
+          nullable: true
+          description: "URL to be called when the payment link status changes - **(SOON)**"
+          maxLength: 2000
+        redirect_url:
+          type: string
+          format: url
+          nullable: true
+          description: "URL to redirect the user after the payment link is paid - **(SOON)**"
+          maxLength: 2000
+      required:
+      - product_id
+    PaymentLinkCreateResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        url:
+          type: string
+          readOnly: true
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the payment link will expire
+        qr_code:
+          type: string
+          nullable: true
+          description: Payment link qr code
+      required:
+      - id
+      - url
+    PaymentLinkDownloadResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status543Enum'
+          description: Status of the payment link
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          description: Amount to be charged to a payment intent
+        currency:
+          type: integer
+          nullable: true
+          description: Currency associated with the amount of the payment link
+        concept:
+          type: string
+          nullable: true
+          description: Concept associated with the payment link. This text will
+            be reflected as a concept in the bank issuing the payment
+          maxLength: 50
+        external_id:
+          type: string
+          nullable: true
+          description: An external ID to identify a user. It can be the merchant's
+            user ID or other tracking ID
+          maxLength: 50
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Date the payment link was created
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the payment link will expire
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email of the user that created the payment link
+          maxLength: 254
+        reusable:
+          type: boolean
+          description: If the payment link can be used multiple times
+        paid:
+          type: boolean
+          description: If the payment link has been paid
+      required:
+      - created_at
+      - id
+      - product_id
+      - url
+    PaymentLinkList:
+      type: object
+      properties:
+        widget_ids:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - widget_ids
+    PaymentLinkListResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+        url:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status543Enum'
+          description: Status of the payment link
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the payment link will expire
+        qr_code:
+          type: string
+          nullable: true
+          description: Payment link qr code
+        payment_data:
+          $ref: '#/components/schemas/PaymentData'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Date the payment link was created
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email of the user that created the payment link
+          maxLength: 254
+        reusable:
+          type: boolean
+          description: If the payment link can be used multiple times
+        intents:
+          type: array
+          items:
+            type: string
+            format: uuid
+            description: Identifies a payment intent
+          readOnly: true
+        paid:
+          type: boolean
+          description: If the payment link has been paid
+        callback_url:
+          type: string
+          format: url
+          nullable: true
+          description: "URL to be called when the payment link status changes - **(SOON)**"
+          maxLength: 2000
+        redirect_url:
+          type: string
+          format: url
+          nullable: true
+          description: "URL to redirect the user after the payment link is paid  - **(SOON)**"
+          maxLength: 2000
+      required:
+      - created_at
+      - id
+      - intents
+      - payment_data
+      - product_id
+      - url
+    PaymentLinkRetrieve:
+      type: object
+      properties:
+        id:
+          type: string
+        product_id:
+          type: string
+          format: uuid
+          description: Identifies a product, it can be a Widget or other product type
+        url:
+          type: string
+          readOnly: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/Status543Enum'
+          description: Status of the payment link
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+          description: Date the payment link will expire
+        qr_code:
+          type: string
+          nullable: true
+          description: Payment link qr code
+        payment_data:
+          $ref: '#/components/schemas/PaymentData'
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+          description: Date the payment link was created
+        email:
+          type: string
+          format: email
+          nullable: true
+          description: Email of the user that created the payment link
+          maxLength: 254
+        reusable:
+          type: boolean
+          description: If the payment link can be used multiple times
+        type:
+          allOf:
+            - $ref: '#/components/schemas/PaymentLinkTypeEnum'
+          description: Type of payment link
+        callback_url:
+          type: string
+          format: url
+          nullable: true
+          description: URL to be called when the payment link status changes
+          maxLength: 2000
+        return_url:
+          type: string
+          format: url
+          nullable: true
+          description: URL to redirect the user after the payment link is paid
+          maxLength: 2000
+      required:
+      - created_at
+      - id
+      - payment_data
+      - product_id
+      - url
+    PaymentLinkTypeEnum:
+      enum:
+        - generic
+      type: string
+    PaymentData:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+          nullable: true
+          description: Amount to be charged to a payment intent
+        currency:
+          type: string
+          nullable: true
+        concept:
+          type: string
+          nullable: true
+          description: Concept associated with the payment intent. This text will
+            be reflected as a concept in the bank issuing the payment
+          maxLength: 50
+        external_id:
+          type: string
+          nullable: true
+          description: An external ID to identify a user. It can be the merchant's
+            user ID or other tracking ID
+          maxLength: 50
+      required:
+      - currency
+    ProductTypeEnum:
+      enum:
+      - widget
+      type: string
+    Status543Enum:
+      enum:
+      - active
+      - expired
+      - cancelled
+      type: string
+    StatusEnum:
+      enum:
+      - intent_created
+      - provider_unavailable
+      - provider_selected
+      - login_2fa_attemp
+      - unexpected_error
+      - login_error
+      - login_wrong_creds
+      - logged_in
+      - list_accounts_error
+      - accounts_listed
+      - preprocess_error
+      - intent_preprocessed
+      - intent_rejected
+      - confirm_wrong_2fa
+      - intent_approved
+      type: string
+  parameters:
+    AmountEq:
+      in: query
+      name: amount
+      schema:
+        $ref: '#/components/schemas/Amount'
+      description: Amount equal to
+    AmountGt:
+      in: query
+      name: amount__gt
+      schema:
+        $ref: '#/components/schemas/Amount'
+      description: Amount greater than
+    AmountGte:
+      in: query
+      name: amount__gte
+      schema:
+        $ref: '#/components/schemas/Amount'
+      description: Amount greater than or equal to
+    AmountLt:
+      in: query
+      name: amount__lt
+      schema:
+        $ref: '#/components/schemas/Amount'
+      description: Amount less than
+    AmountLte:
+      in: query
+      name: amount__lte
+      schema:
+        $ref: '#/components/schemas/Amount'
+      description: Amount less than or equal to
+    AmountRange:
+      in: query
+      name: amount__range
+      schema:
+        type: array
+        items:
+          $ref: '#/components/schemas/Amount'
+      description: Amount in range
+      examples:
+        AmountBetween:
+          summary: Example of amount range between values
+          value: [1.00, 5.00]
+    CreatedAt:
+      in: query
+      name: created_at
+      schema:
+        type: string
+        format: date-time
+      description: Created at equal to
+    CreatedAtGt:
+      in: query
+      name: created_at__gt
+      schema:
+        type: string
+        format: date-time
+      description: Created at greater than
+    CreatedAtGte:
+      in: query
+      name: created_at__gte
+      schema:
+        type: string
+        format: date-time
+      description: Created at greater than or equal to
+    CreatedAtLt:
+      in: query
+      name: created_at__lt
+      schema:
+        type: string
+        format: date-time
+      description: Created at less than
+    CreatedAtLte:
+      in: query
+      name: created_at__lte
+      schema:
+        type: string
+        format: date-time
+      description: Created at less than or equal to
+    CreatedAtRange:
+      in: query
+      name: created_at__range
+      schema:
+        type: array
+        items:
+          type: string
+          format: date-time
+      description: Created at in range
+      examples:
+        CreatedAtBetween:
+          summary: Example of created at range between values
+          value: ["1946-10-01T09:13:51.618Z","1948-06-04T14:53:50.061Z"]
+    Ordering:
+      in: query
+      name: ordering
+      schema:
+        type: string
+      description: Order by
+    Page:
+      in: query
+      name: page
+      schema:
+        type: integer
+      description: Page
+    Paid:
+      in: query
+      name: paid
+      schema:
+        type: boolean
+      description: If the payment link has been paid or not
+    Search:
+      in: query
+      name: search
+      schema:
+        type: string
+      description: Free text search in concept or external ID fields
+    Status:
+      in: query
+      name: status
+      schema:
+        $ref: '#/components/schemas/Status543Enum'
+      description: Status of the payment link
+    StatusIn:
+        in: query
+        name: status__in
+        schema:
+          type: array
+          items:
+            $ref: '#/components/schemas/Status543Enum'
+        description: List Payment Status of the payment link
+        examples:
+          StatusBetween:
+            summary: Example of status between values
+            value: ["active","expired"]
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key required to make calls
+      name: X-API-Key
+      in: header

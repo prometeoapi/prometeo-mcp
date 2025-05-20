@@ -1,0 +1,2509 @@
+openapi: 3.1.0
+info:
+  title: Prometeo API
+  description: Endpoints para la api bancaria de Prometeo
+  contact:
+    name: Prometeo
+    url: 'https://prometeoapi.com'
+    email: info@prometeoapi.com
+  version: 1.5.1
+servers:
+  - url: 'https://banking.prometeoapi.net/'
+    variables: {}
+    description: Pre-Production and Production
+  - url: 'https://banking.sandbox.prometeoapi.com/'
+    variables: {}
+    description: Sandbox
+components:
+  schemas:
+    ErrorMessage:
+      type: object
+      properties:
+        status:
+          type: string
+          default: error
+        message:
+          type: string
+    Date:
+      type: string
+      pattern: '\d\d/\d\d/\d{4}'
+      description: Fecha en formato DD/MM/YYYY
+    Currency:
+      type: string
+      pattern: '[A-Z]{3}'
+      description: Moneda en formato ISO-4217
+    Country:
+      type: string
+      pattern: '[A-Z]{2}'
+      description: Código de país en formato ISO-3166
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        number:
+          type: string
+        branch:
+          type: string
+        currency:
+          $ref: '#/components/schemas/Currency'
+        balance:
+          type: number
+    CreditCard:
+      type: object
+      properties:
+        id:
+          type: string
+        balance_dollar:
+          type: number
+        balance_local:
+          type: number
+        close_date:
+          $ref: '#/components/schemas/Date'
+        due_date:
+          $ref: '#/components/schemas/Date'
+        name:
+          type: string
+        number:
+          type: string
+    Movement:
+      type: object
+      properties:
+        id:
+          type: integer
+        credit:
+          type: number
+        debit:
+          type: number
+        reference:
+          type: string
+        date:
+          $ref: '#/components/schemas/Date'
+        detail:
+          type: string
+    MovementDetail:
+      type: object
+      properties:
+        id:
+          type: string
+        reference:
+          type: string
+        operation_detail:
+          type: string
+        timestamp:
+          type: string
+        detail:
+          type: string
+        debit:
+          type: number
+        credit:
+          type: number
+        origin:
+          type: string
+        branch:
+          type: string
+        beneficiary:
+          type: string
+        destination:
+          type: string
+        bill_detail:
+          type: string
+    TransferLog:
+      type: object
+      properties:
+        request_id:
+          type: string
+          description: UUID que identifica a la transferencia dentro de Prometeo.
+          format: uuid
+        origin_account:
+          description: Número de la cuenta de origen.
+          type: string
+        destination_account:
+          description: Número de la cuenta de destino.
+          type: string
+        destination_name:
+          description: Nombre del destinatario.
+          type: string
+        destination_institution_name:
+          description: Nombre de la Institución o Banco destino.
+          type: string
+        currency:
+          $ref: '#/components/schemas/Currency'
+        amount:
+          description: Monto transferido.
+          type: string
+        status:
+          type: string
+          description: El estado de la transferencia.
+          enum:
+          - CREATED
+          - START_CONFIRM
+          - CONFIRMED
+          - ERROR
+          - REJECTED
+        concept:
+          description: Concepto de la transferencia.
+          type: string
+        created_at:
+          description: Fecha de creación de la transferencia.
+          type: string
+        operation_id:
+          description: ID de operación retornado por el banco al momento de realizar la confirmación de la transferencia.
+          type: string
+    Branch:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        note:
+          type: string
+        segments:
+          type: array
+          items:
+            type: string
+        availability:
+          type: array
+          items:
+            type: string
+        location:
+          $ref: '#/components/schemas/Location'
+    ATM:
+      type: object
+      properties:
+        id:
+          type: string
+        note:
+          type: string
+        services:
+          type: array
+          items:
+            type: string
+        location:
+          $ref: '#/components/schemas/Location'
+    Location:
+      type: object
+      properties:
+        address:
+          type: string
+        zipcode:
+          type: string
+        latitude:
+          type: number
+        longitude:
+          type: number
+    TransferDetail:
+      type: object
+      properties:
+        codigo_transaccion:
+          type: string
+        estado_transaccion:
+          type: string
+        nombre_beneficiario:
+          type: string
+        id_beneficiario:
+          type: string
+        cuenta_beneficiario:
+          type: string
+        valor:
+          type: number
+        entidad:
+          type: string
+        tipo_producto:
+          type: string
+    ValidateAccount:
+      type: object
+      properties:
+        document_type:
+          type: string
+        document_number:
+          type: string
+        beneficiary_name:
+          type: string
+        account_currency:
+          $ref: '#/components/schemas/Currency'
+        account_type:
+          type: string
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key necesaria para hacer llamadas
+      name: X-API-Key
+      in: header
+    SessionKeyAuth:
+      name: key
+      type: apiKey
+      in: query
+      description: Clave de sesión que identifica al usuario en la institución bancaria
+  responses:
+    MissingAPIKey:
+      description: Falta API Key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example:
+            status: error
+            message: Missing API key
+          examples: {}
+    InvalidOrMissingParameters:
+      description: Parámetros inválidos o ausentes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example:
+            status: error
+            message: 'Invalid parameters: date_end'
+    MissingParameters:
+      description: Parámetros ausentes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example:
+            status: missing_params
+            message: 'Missing parameters: task_id'
+    NotImplemented:
+      description: Endpoint no disponible para este provider
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example:
+            status: not_implemented
+            message: This endpoint is currently unsupported for this provider
+  examples: {}
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: Autenticación
+  - name: Datos Transaccionales
+  - name: Transferencias
+  - name: Meta
+paths:
+  /login/:
+    post:
+      summary: Login
+      description: Iniciar sesión con una institucion financiera
+      tags:
+        - Autenticación
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  description: Nombre del proveedor (usar el endpoint de listado de proveedores para obtener cuales estan disponibles)
+                username:
+                  type: string
+                  description: Nombre de usuario para acceder al eBanking o app
+                password:
+                  type: string
+                  description: Passsword del usuario para acceder al eBanking o app
+                type:
+                  type: string
+                  description: Tipo de cuenta o documento (dependiente del banco)
+              required:
+                - provider
+                - username
+                - password
+            examples:
+              Login sandbox:
+                value:
+                  provider: test
+                  username: 12345
+                  password: gfdsa
+              Login sandbox 2FA OTP:
+                value:
+                  provider: test
+                  username: 12345otp
+                  password: asdfg
+              Login sandbox 2FA pregunta personal:
+                value:
+                  provider: test
+                  username: 12345pq
+                  password: asdfg
+        description: ''
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    oneOf:
+                      - type: string
+                        enum:
+                          - select_client
+                        description: Es necesario seleccionar un cliente
+                      - type: string
+                        enum:
+                          - wrong_credentials
+                        description: Usuario o password inválidos
+                      - type: string
+                        enum:
+                          - missing_credentials
+                        description: Falta un campo de credenciales
+                      - type: string
+                        enum:
+                          - interaction_required
+                        description: |
+                          Se requiere algún tipo de inicio de sesión interactiva, como un captcha o una pregunta de seguridad
+                      - type: string
+                        enum:
+                          - logged_in
+                        description: Sesión iniciada correctamente
+                  key:
+                    type: string
+                    description: |
+                      Session key wich must be used in all subsequent requests.
+              examples:
+                Success:
+                  summary: Login exitoso
+                  value:
+                    status: logged_in
+                    key: 163d06b2-3378-4383-9868-71c2b6fb28da
+                SelectClient:
+                  summary: Seleccionar cliente
+                  value:
+                    status: select_client
+                    key: 959602df-d3ee-4898-b6d8-a28a2c7486fb
+                InteractionRequired Pregunta Personal:
+                  summary: Sesión interactiva con pregunta personal
+                  value:
+                    context: Nombre de la empresa más grande de OpenBanking en LATAM
+                    field: personal_question
+                    key: be612b0a-c972-4fb1-bb16-798956a3efa1
+                    status: interaction_required
+                InteractionRequired OTP:
+                  summary: Sesión interactiva con OTP
+                  value:
+                    context: OTP required
+                    field: otp
+                    key: be612b0a-c972-4fb1-bb16-798956a3efa1
+                    status: interaction_required
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '403':
+          description: |
+            Error en la autenticacioó, los posibles status son:
+            - `wrong_credentials` Usuario o password incorrectos
+            - `user_blocked` Usuario bloqueado
+            - `max_sessions_reached` El usuario ya tiene una sesión iniciada
+              o alcanzo el límite de sesiones permitidas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  message:
+                    type: string
+              examples:
+                WrongCredentials:
+                  summary: Credenciales incorrectas
+                  value:
+                    status: wrong_credentials
+                UserBlocked:
+                  summary: Usuario bloqueado
+                  value:
+                    message: ''
+                    status: user_blocked
+                MaxSessionsReached:
+                  summary: Usuario ya tiene una sesión iniciada
+                  description: |
+                    El usuario alcanzo el limite de sesiones activas permitidas,
+                    para cerrar todas las sesiones activas, llamar al endpoint
+                    de logout con la key retornada.
+                    Luego de esto se deberia poder iniciar sesión sin problemas.
+                  value:
+                    key: 109396c9ad204f2f8ef1064c66f3c35f
+                    message: User already has a session
+                    status: max_sessions_reached
+      security:
+        - APIKeyAuth: []
+  /logout/:
+    get:
+      summary: Logout
+      description: 'Cierra la sesión actual, luego de esto la clave de sesión dejará de ser válida.'
+      tags:
+        - Autenticación
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: logout
+      responses:
+        '200':
+          description: Logout exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    default: logged_out
+              example:
+                status: logged_out
+              examples: {}
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /client/:
+    get:
+      summary: Clientes
+      description: |
+        Los clientes son cuentas asociadas a un usuario, un usuario puede tener más de una cuenta asociada a su usuario. Sucede mucho en el caso de cuentas con 2 dueños.
+      tags:
+        - Autenticación
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getClients
+      responses:
+        '200':
+          description: Listar clientes exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    default: success
+                  clients:
+                    type: object
+              examples:
+                TwoClients:
+                  summary: Dos clientes
+                  value:
+                    status: success
+                    clients:
+                      '0': First Client
+                      '1': Second Client
+                NoClients:
+                  summary: Sin clientes
+                  value:
+                    status: success
+                    clients: {}
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  '/client/{client_id}/':
+    parameters:
+      - in: path
+        name: client_id
+        schema:
+          type: string
+          example: '1'
+        required: true
+    get:
+      summary: Seleccionar cliente
+      description: Selecciona el cliente a usar en la sesión
+      tags:
+        - Autenticación
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: selectClient
+      responses:
+        '200':
+          description: Cliente seleccionado
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    default: success
+              examples:
+                Wrong client:
+                  value:
+                    status: error
+                    message: wrong_client
+                Success client:
+                  value:
+                    status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      parameters: []
+  /login-procedure/:
+    post:
+      summary: Login Procedure
+      description: Enviar preguntas de seguridad
+      tags:
+        - Autenticación
+      operationId: login-procedure
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                question_one_id:
+                  type: string
+                  description: Id de la primera pregunta de seguridad
+                answer_one:
+                  type: string
+                  description: Respuesta a la primera pregunta de seguridad
+                question_two_id:
+                  type: string
+                  description: Id de la segunda pregunta de seguridad
+                answer_two:
+                  type: string
+                  description: Respuesta a la segunda pregunta de seguridad
+                question_three_id:
+                  type: string
+                  description: Id de la tercera pregunta de seguridad
+                answer_three:
+                  type: string
+                  description: Respuesta a la tercera pregunta de seguridad
+                otp:
+                  type: integer
+                  description: OTP
+              required:
+                - question_one_id
+                - answer_one
+                - question_two_id
+                - answer_two
+                - question_three_id
+                - answer_three
+                - otp
+        description: ''
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    oneOf:
+                      - type: string
+                        enum:
+                          - logged_in
+                        description: Sesión iniciada correctamente
+                  key:
+                    type: string
+                    description: |
+                      Session key wich must be used in all subsequent requests.
+              examples:
+                Success:
+                  summary: Login exitoso
+                  value:
+                    status: logged_in
+                    key: 163d06b2-3378-4383-9868-71c2b6fb28da
+      security:
+        - APIKeyAuth: []
+  /info/:
+    get:
+      summary: Información del titular
+      description: Obtiene información del titular de la cuenta bancaria que inició sesión
+      tags:
+        - Datos Transaccionales
+      security:
+        - APIKeyAuth: [ ]
+          SessionKeyAuth: [ ]
+      operationId: getPersonalInfo
+      responses:
+        '200':
+          description: Get personal info success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  info:
+                    type: object
+                    properties:
+                      document:
+                        type: string
+                      email:
+                        type: string
+                      name:
+                        type: string
+              examples:
+                Info success:
+                  value:
+                    status: success
+                    info:
+                      document: '12345'
+                      name: Test User
+                      email: test@example.com
+  /account/:
+    get:
+      summary: Cuentas
+      description: Obtener las cuentas del usuario
+      tags:
+        - Datos Transaccionales
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getAccounts
+      responses:
+        '200':
+          description: Get accounts success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  accounts:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Account'
+              example:
+                accounts:
+                  - balance: 1234.95
+                    branch: 02 - 18 De Julio
+                    currency: UYU
+                    id: hash1
+                    name: Cuenta total
+                    number: '001234567890'
+                  - balance: 53.96
+                    branch: 61 - Ciudad Vieja
+                    currency: USD
+                    id: hash4
+                    name: Caja De Ahorro Atm
+                    number: '004327567890'
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  '/account/{account_number}/movement/':
+    get:
+      summary: Listar movimientos
+      description: Obtiene todos los movimientos de una cuenta en un rango de fechas
+      tags:
+        - Datos Transaccionales
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getMovements
+      parameters:
+        - in: path
+          name: account_number
+          schema:
+            type: string
+          required: true
+          description: Número de cuenta
+        - in: query
+          name: currency
+          schema:
+            $ref: '#/components/schemas/Currency'
+            type: string
+          required: true
+          description: Moneda de la cuenta
+        - in: query
+          name: date_start
+          schema:
+            $ref: '#/components/schemas/Date'
+            type: string
+          required: true
+          description: Fecha inicial a filtrar
+          allowReserved: true
+        - in: query
+          name: date_end
+          schema:
+            $ref: '#/components/schemas/Date'
+            type: string
+          required: true
+          description: Fecha final a filtrar
+          allowReserved: true
+      responses:
+        '200':
+          description: Get movements success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  movements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movement'
+              example:
+                movements:
+                  - credit: ''
+                    date: 12/01/2017
+                    debit: 3500
+                    detail: 'RETIRO EFECTIVO CAJERO AUTOMATICO J.C. GOMEZ 1372, MONTEVIDEO TARJ: 4303090202018993'
+                    id: 890185180
+                    reference: '000000005084'
+                  - credit: ''
+                    date: 05/01/2017
+                    debit: 16000
+                    detail: 'RETIRO EFECTIVO CAJERO AUTOMATICO J.H Y OBES 1389, MONTEVIDEO TARJ: 4303090202018993'
+                    id: 1024917397
+                    reference: '000000002931'
+                  - credit: 98640
+                    date: 03/01/2017
+                    debit: ''
+                    detail: SUELDOS 123456TT RECIBIDA /Qualia Fintech S.R.L
+                    id: 1303899175
+                    reference: TR0003858408
+                status: success
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+    parameters:
+      - schema:
+          type: string
+        name: account_number
+        in: path
+        required: true
+  '/account/{account_number}/movement/{movement_id}':
+    get:
+      summary: Detalle de movimiento (EXCLUSIVO SCOTIA EMPRESAS PERÚ)
+      description: Retorna informacion extra sobre un movimiento **ESTE ES UN ENDPOINT EXCLUSIVO PARA SCOTIA EMPRESAS PERÚ**
+      tags:
+        - Datos Transaccionales
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getMovementDetail
+      parameters:
+        - in: path
+          name: account_number
+          schema:
+            type: string
+          required: true
+          description: Número de cuenta
+        - in: path
+          name: movement_id
+          schema:
+            type: string
+          required: true
+          description: Id del movimiento
+      responses:
+        '200':
+          description: Get movement detail success
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  movements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/MovementDetail'
+              example:
+                id: '202009020000'
+                reference: 20199001CTR
+                operation_detail: 665.494.123.4567
+                timestamp: '02/09/2020 05:46:01'
+                detail: COMISION MANT. CUENTA
+                debit: 60
+                credit: ''
+                origin: null
+                branch: (I)MTRO AHC HUACHO
+                beneficiary: null
+                destination: null
+                bill_detail: 20199001CTRT426665
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '501':
+          $ref: '#/components/responses/NotImplemented'
+    parameters:
+      - schema:
+          type: string
+        name: account_number
+        in: path
+        required: true
+      - schema:
+          type: string
+        name: movement_id
+        in: path
+        required: true
+  /credit-card/:
+    get:
+      summary: Listar tarjetas de crédito
+      description: Lista todas las tarjetas de crédito del usuario
+      tags:
+        - Datos Transaccionales
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getCreditCards
+      responses:
+        '200':
+          description: Tarjetas listadas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  credit_cards:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CreditCard'
+              example:
+                credit_cards:
+                  - balance_dollar: 67.89
+                    balance_local: 12345.42
+                    close_date: 04/11/2019
+                    due_date: 20/11/2019
+                    id: EcebS0rIZ5NdJNzS4XHmuOnHvSsI72TSA3j/8drzYYHtW1sQbpz5Hc
+                    name: Vi Int Sumaclub Plus
+                    number: '770012345678'
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  '/credit-card/{card_number}/movements':
+    get:
+      summary: Listar movimientos de una tarjeta
+      description: Lista todos los movimientos de una tarjeta de crédito para un rango de fechas
+      tags:
+        - Datos Transaccionales
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getCreditCardMovements
+      parameters:
+        - in: path
+          name: card_number
+          schema:
+            type: string
+          required: true
+          description: Número de tarjeta
+        - in: query
+          name: currency
+          schema:
+            $ref: '#/components/schemas/Currency'
+          required: true
+          description: Moneda de los movimientos
+        - in: query
+          name: date_start
+          schema:
+            $ref: '#/components/schemas/Date'
+          required: true
+          description: Fecha de inicio a filtrar
+          allowReserved: true
+        - in: query
+          name: date_end
+          schema:
+            $ref: '#/components/schemas/Date'
+          required: true
+          description: Fecha de fin a filtrar
+          allowReserved: true
+      responses:
+        '200':
+          description: Movimientos listados exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    default: success
+                  movements:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movement'
+              example:
+                movements:
+                  - credit: ''
+                    date: 12/01/2017
+                    debit: 3500
+                    detail: 'RETIRO EFECTIVO CAJERO AUTOMATICO J.C. GOMEZ 1372, MONTEVIDEO TARJ: 4303090202018993'
+                    id: 890185180
+                    reference: '000000005084'
+                  - credit: ''
+                    date: 05/01/2017
+                    debit: 16000
+                    detail: 'RETIRO EFECTIVO CAJERO AUTOMATICO J.H Y OBES 1389, MONTEVIDEO TARJ: 4303090202018993'
+                    id: 1024917397
+                    reference: '000000002931'
+                  - credit: 98640
+                    date: 03/01/2017
+                    debit: ''
+                    detail: SUELDOS 123456TT RECIBIDA /Qualia Fintech S.R.L
+                    id: 1303899175
+                    reference: TR0003858408
+                status: success
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+    parameters:
+      - schema:
+          type: string
+        name: card_number
+        in: path
+        required: true
+  /transfer/account-enroll-form:
+    get:
+      summary: Campos requeridos para preinscribir una cuenta
+      description: Listar los campos requeridos para preinscribir una cuenta para transferencias
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getTransferEnrollForm
+      responses:
+        '200':
+          description: Campos listados exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  account_enroll_fields:
+                    type: array
+                    items:
+                      type: object
+              example:
+                account_enroll_fields:
+                  - choices:
+                      - label_en: BANCOLOMBIA
+                        label_es: BANCOLOMBIA
+                        name: '0007'
+                      - label_en: BANCO AGRARIO
+                        label_es: BANCO AGRARIO
+                        name: '1040'
+                    label_en: Destination bank
+                    label_es: Banco destino
+                    name: destination_institution
+                    optional: false
+                    type: text
+                  - label_en: Destination account number
+                    label_es: Número de cuenta destino
+                    name: destination_account
+                    optional: false
+                    type: text
+                  - label_en: Destination owner name
+                    label_es: Nombre de titular de cuenta destino
+                    name: destination_owner_name
+                    optional: false
+                    type: text
+                  - choices:
+                      - label_en: Cuenta corriente
+                        label_es: Cuenta corriente
+                        name: '1'
+                      - label_en: Cuenta de ahorros
+                        label_es: Cuenta de ahorros
+                        name: '7'
+                    label_en: Account type
+                    label_es: Tipo de cuenta
+                    name: account_type
+                    optional: false
+                    type: text
+                  - label_en: Document number
+                    label_es: Número de documento
+                    name: document_number
+                    optional: false
+                    type: text
+                  - choices:
+                      - label_en: CC
+                        label_es: CC
+                        name: CC
+                      - label_en: NIT
+                        label_es: NIT
+                        name: NIT
+                    label_en: Document type
+                    label_es: Tipo de documento
+                    name: document_type
+                    optional: false
+                    type: text
+                  - label_en: OTP Token number
+                    label_es: Token OTP
+                    name: authorization_data
+                    optional: false
+                    type: text
+                status: success
+  /transfer/account-enroll:
+    post:
+      summary: |
+        Preinscribir cuenta para transferencias (requerido solo en algúnos providers)
+      description: |
+        Preinscribe una cuenta para poder realizar transferencias <br /> Los parámetros opcionales serán necesarios según cada provider
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: transferAccountEnroll
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                destination_institution:
+                  type: string
+                  description: Institución de destino
+                destination_account:
+                  type: string
+                  description: Número de cuenta a inscribir
+                destination_owner_name:
+                  type: string
+                  description: Nombre del propietario de la cuenta
+                currency:
+                  type: string
+                  description: Tipo de moneda
+                account_type:
+                  type: string
+                  description: Tipo de cuenta
+                document_number:
+                  type: string
+                  description: Documento de identidad del propietario de la cuenta
+                document_type:
+                  type: string
+                  description: Tipo de documento del propietario
+                authorization_type:
+                  type: string
+                  description: Método de autorizacion (MFA)
+                authorization_data:
+                  type: string
+                  description: Respuesta de autorización MFA (por ej. OTP)
+                authorization_device_number:
+                  type: string
+                  description: Número del dispositivo de autorización
+                enroll_authorization_data:
+                  type: string
+                  description: Contraseña de alta de cuentas
+              required:
+                - destination_institution
+                - destination_account
+                - destination_owner_name
+      responses:
+        '200':
+          description: Cuenta preinscripta exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  response:
+                    type: object
+              examples:
+                Success:
+                  summary: Cuenta preinscripta exitosamente
+                  value:
+                    status: success
+                    result:
+                      approved: true
+                      message: La cuenta ha sido inscrita exitosamente y se encuentra en estado 'Pendiente de activación'
+                InteractionRequired:
+                  summary: Confirmación de preinscripción posterior requerida
+                  value:
+                    status: interaction_required
+                    result:
+                      approved: false
+                      message: Enroll confirm authorization required
+                      request_id: 13c9a061387343788aa36a7d1528e662
+                      authorization_devices:
+                        - OTP
+  /transfer/account-enroll-confirm:
+    post:
+      summary: Confirma la preinscripción cuando requiere autorización posterior
+      description: |
+        Utiliza autenticación de múltiples factores para confirmar la preinscripción (por ej. SMS, EMAIL)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: transferAccountEnrollConfirm
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                authorization_data:
+                  type: string
+                  description: 'Respuesta de autorización MFA (por ej. SMS, EMAIL)'
+                request_id:
+                  type: string
+                  description: 'Id de la operación de preinscripción, a usarse para confirmar'
+              required:
+                - authorization_data
+                - request_id
+      responses:
+        '200':
+          description: Cuenta preinscripta exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  response:
+                    type: object
+              example:
+                status: success
+                result:
+                  approved: true
+                  message: Account enrollment successful
+  /transfer/account-enroll-remove:
+    post:
+      summary: Remover cuenta preinscrita
+      description: |
+        Remueve una cuenta preinscrita con anterioridad (solo disponible para los proveedores Banorte Corporativo Mexico y Davivienda Corporativo Colombia)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: transferAccountEnrollRemove
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                destination_account:
+                  type: string
+                  description: Número de cuenta a eliminar
+                document_number:
+                  type: string
+                  description: Documento de identidad del propietario de la cuenta
+                authorization_type:
+                  type: string
+                  description: Método de autorización (MFA)
+                authorization_data:
+                  type: string
+                  description: Respuesta de autorización MFA (por ej. OTP)
+                destination_institution:
+                  type: string
+                  description: Institución bancaria a la que pertenece la cuenta que se desea remover
+              required:
+                - destination_account
+      responses:
+        '200':
+          description: Cuenta removida exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  response:
+                    type: object
+              examples:
+                Success:
+                  summary: Cuenta removida exitosamente
+                  value:
+                    status: success
+                    result:
+                      approved: true
+                      message: Account enrollments removed
+                AccountNotEnrolled:
+                  summary: Cuenta a remover no se encuentra preinscripta
+                  value:
+                    status: success
+                    result:
+                      approved: false
+                      message: Account is not enrolled
+                InvalidTokenOTP:
+                  summary: Token OTP no valido
+                  value:
+                    status: success
+                    result:
+                      approved: false
+                      message: Invalid OTP Token
+  /transfer/destinations:
+    get:
+      summary: Listar instituciones para transferencias
+      description: Lista las instituciones financieras hacia donde se pueden realizar transferencias
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getTransferDestinations
+      responses:
+        '200':
+          description: Instituciones listadas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  destinations:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+              example:
+                destinations:
+                  - id: 0
+                    name: SANTANDER
+                  - id: 1
+                    name: B.R.O.U.
+                  - id: 91
+                    name: B.H.U.
+                  - id: 110
+                    name: BANDES
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /transfer/form-fields:
+    get:
+      summary: Campos requeridos para realizar una transferencia
+      description: |
+        Listar los campos requeridos para realizar transferencias hacia una cuenta (aplica solo al proveedor Banco de Bogotá Corporativo de Colombia)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getTransferFormFields
+      responses:
+        '200':
+          description: Campos listados exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  transfer_form_fields:
+                    type: array
+                    items:
+                      type: object
+              example:
+                transfer_form_fields:
+                  - label_en: Destination bank
+                    label_es: Banco destino
+                    name: destination_institution
+                    optional: false
+                    type: text
+                  - label_en: Currency
+                    label_es: Moneda
+                    name: currency
+                    optional: false
+                    type: text
+                    choices:
+                      - label_en: Colombian Peso
+                        label_es: Peso colombiano
+                        name: COP
+                  - label_en: Destination account number
+                    label_es: Número de cuenta destino
+                    name: destination_account
+                    optional: false
+                    type: text
+                  - label_en: Destination owner name
+                    label_es: Nombre de titular de cuenta destino
+                    name: destination_owner_name
+                    optional: false
+                    type: text
+                  - choices:
+                      - label_en: Cuenta corriente
+                        label_es: Cuenta corriente
+                        name: '1'
+                      - label_en: Cuenta de ahorros
+                        label_es: Cuenta de ahorros
+                        name: '7'
+                    label_en: Account type
+                    label_es: Tipo de cuenta
+                    name: account_type
+                    optional: false
+                    type: text
+                  - label_en: Document number
+                    label_es: Número de documento
+                    name: document_number
+                    optional: false
+                    type: text
+                  - choices:
+                      - label_en: CC
+                        label_es: CC
+                        name: CC
+                      - label_en: NIT
+                        label_es: NIT
+                        name: NIT
+                    label_en: Document type
+                    label_es: Tipo de documento
+                    name: document_type
+                    optional: false
+                    type: text
+                status: success
+  /transfer/mfa-methods:
+    get:
+      summary: Métodos de autenticación requeridos para realizar una transferencias
+      description: |
+        Listar los tipos de autenticación requeridos para realizar transferencias hacia una cuenta (por ahora solo para `santander_pers_uy`)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getTransfermfa
+      responses:
+        '200':
+          description: Métodos listados exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  authorization_devices:
+                    type: array
+                    items:
+                      type: string
+              example:
+                authorization_devices:
+                  - cardCode
+                status: success
+  /transfer/preprocess:
+    post:
+      summary: Preprocesar transferencia
+      description: Aprueba y valida los datos necesarios para realizar la transferencia
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: transferPreprocess
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                origin_account:
+                  type: string
+                  description: Número de cuenta de donde se transfiere
+                destination_institution:
+                  type: integer
+                  description: |
+                    Id de la institución a donde se transfiere, el id se obtiene en el endpoint de listar instituciones para transferencias
+                destination_account:
+                  type: string
+                  description: Número de cuenta a donde se transfiere
+                currency:
+                  $ref: '#/components/schemas/Currency'
+                amount:
+                  type: number
+                  description: Cantidad a transferir
+                concept:
+                  type: string
+                  description: Concepto o descripción de la transferencia
+                destination_owner_name:
+                  type: string
+                  description: Nombre del titular de la cuenta de destino (vacío si no aplica)
+                branch:
+                  type: integer
+                  description: Número de sucursal de la cuenta de destino (vacío si no aplica)
+                destination_account_type:
+                  type: string
+                  description: Tipo de cuenta destino (vacío si no aplica)
+                document_number:
+                  type: string
+                  description: |
+                    Número de documento de identidad (solo aplica al proveedor Banco de Bogotá Corporativo de Colombia)
+                document_type:
+                  type: string
+                  description: |
+                    Tipo de documento de identidad (solo aplica al proveedor Banco de Bogotá Corporativo de Colombia)
+                reason:
+                  type: string
+                  description: |
+                    Motivo de la transferencia - Opcional (solo aplica para el proveedor RedLink Corporativo Argentina )
+                origin_holder:
+                  type: string
+                  description: |
+                    Nombre o razon social del titular de la cuenta (solo aplica para transferencias virtuales del proveedor RedLink Corporativo Argentina )
+                origin_cuit:
+                  type: string
+                  description: |
+                    CUIT del titular de la cuenta (solo aplica para transferencias virtuales del proveedor RedLink Corporativo Argentina )
+                origin_cvu:
+                  type: string
+                  description: |
+                    CVU de la cuenta de origen (solo aplica para transferencias virtuales del proveedor RedLink Corporativo Argentina )
+                destination_cuit:
+                  type: string
+                  description: |
+                    CUIT del destinatario (solo aplica para transferencias virtuales del proveedor RedLink Corporativo Argentina )
+                voucher_id:
+                  type: integer
+                  description: |
+                    Identificador del comprobante - Opcional (solo aplica para transferencias virtuales del proveedor RedLink Corporativo Argentina )
+              required:
+                - origin_account
+                - destination_institution
+                - destination_account
+                - currency
+                - amount
+                - concept
+            examples:
+              Transfer-Preprocess Example:
+                value:
+                  origin_account: 12345
+                  destination_institution: 12
+                  destination_account: 54321
+                  currency: UYU
+                  amount: 100
+                  concept: Grocery
+      responses:
+        '200':
+          description: Transferencia preprocesada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  result:
+                    type: object
+                    properties:
+                      approved:
+                        type: boolean
+                        description: Indica si la operación se aprobó satisfactoriamente
+                      authorization_devices:
+                        type: array
+                        description: |
+                          Lista de métodos de verificación posibles para confirmar la transferencia (pin, tarjeta de coordenadas, token, etc), estará vacía si la transferencia se puede realizar sin método de verificación
+                        items:
+                          type: string
+                      message:
+                        type: string
+                        description: |
+                          Descripción del resultado de la operación (solo si ha ocurrido un error)
+                      request_id:
+                        type: string
+                        description: |
+                          Id de la operación, a usarse para confirmar la transferencia
+              example:
+                result:
+                  approved: true
+                  authorization_devices:
+                    - data:
+                        - F-4
+                        - B-2
+                        - G-7
+                      type: cardCode
+                    - data: null
+                      type: pin
+                  message: null
+                  request_id: 0b7d6b32d1be4c11bde21e7ddc08cc36
+                status: success
+          links:
+            TransferConfirm:
+              operationId: transferConfirm
+              parameters:
+                request_id: $response.body#/result/request_id
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /transfer/preprocess/retry:
+    post:
+      summary: Reintento de preprocesar la transferencia
+      description: Reintento de la transferencia con los mismos datos suministrados (por ahora solo para `santander_pers_uy`)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: retryTransferPreprocess 
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  description: |
+                    Id de la request retornada por el endpoint de preprocesar transferencia
+              required:
+                - request_id
+      responses:
+              '200':
+                description: Transferencia preprocesada
+                content:
+                  application/json:
+                    schema:
+                      type: object
+                      properties:
+                        status:
+                          type: string
+                        result:
+                          type: object
+                          properties:
+                            approved:
+                              type: boolean
+                              description: Indica si la operación se aprobó satisfactoriamente
+                            authorization_devices:
+                              type: array
+                              description: |
+                                Lista de métodos de verificación posibles para confirmar la transferencia (pin, tarjeta de coordenadas, token, etc), estará vacía si la transferencia se puede realizar sin método de verificación
+                              items:
+                                type: string
+                            message:
+                              type: string
+                              description: |
+                                Descripción del resultado de la operación (solo si ha ocurrido un error)
+                            request_id:
+                              type: string
+                              description: |
+                                Id de la operación, a usarse para confirmar la transferencia
+                    example:
+                      result:
+                        approved: true
+                        authorization_devices: []
+                        message: null
+                        request_id: 0b7d6b32d1be4c11bde21e7ddc08cc36
+                      status: success
+  /transfer/confirm:
+    post:
+      summary: Confirmar transferencia
+      description: Confirma una transferencia ya preprocesada
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: transferConfirm
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  description: |
+                    Id de la request retornada por el endpoint de preprocesar transferencia
+                authorization_type:
+                  type: string
+                  description: |
+                    Nombre del método de verificación a usar, corresponde al campo type de la lista de metodos de verificacion retornados por el endpoint de preprocesar transferencia. De no ser necesario un metodo de verificación este parámetro queda vacío.
+                  default: ''
+                authorization_data:
+                  type: string
+                  description: |
+                    Valor de verificacion (número de pin, respuesta de tarjeta de coordenadas, etc) si son varios valores, deben ir separados por coma.
+                  default: ''
+                authorization_device_number:
+                  type: string
+                  description: |
+                    Número de serie asignado al dispositivo de autenticación. Este campo es opcional a excepción de los siguientes proveedores: Telecrédito.
+                  default: ''
+              required:
+                - request_id
+      responses:
+        '200':
+          description: Transferencia realizada exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  transfer:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      success:
+                        type: boolean
+              example:
+                status: success
+                transfer:
+                  message: ''
+                  success: true
+        '404':
+          description: Transferencia no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                status: transfer_not_found
+                message: 'Transferencia no encontrada'
+        '400':
+          description: Transferencia inválida
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              examples:
+                TransferRejected:
+                  summary: Transferencia rechazada
+                  value:
+                    status: transfer_status_invalid
+                    message: 'La tranferencia fue rechazada'
+                TransferCancelled:
+                  summary: Transferencia cancelada
+                  value:
+                    status: transfer_status_invalid
+                    message: 'La tranferencia fue cancelada'
+                TransferConfirmed:
+                  summary: Transferencia confirmada
+                  value:
+                    status: transfer_status_invalid
+                    message: 'La tranferencia fue confirmada'
+  /transfer/detail:
+    post:
+      summary: Obtener detalles de la transferencia
+      description: |
+        Devuelve el estado y los detalles de la transferencia (solo aplica al proveedor Bancolombia Corporativo Colombia)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: transferDetail
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  description: ID de la petición la transferencia
+              required:
+                - request_id
+            example:
+              request_id: '002206345988'
+      responses:
+        '200':
+          description: Detalles de la transferencia
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  result:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        description: Indica si la operación fue satisfactoria.
+                      meta:
+                        type: array
+                        description: Lista los detalles y estado de la transacción.
+                        items:
+                          $ref: '#/components/schemas/TransferDetail'
+              example:
+                result:
+                  success: true
+                  meta:
+                    - codigo_transaccion: '4523574'
+                      estado_transaccion: Pendiente
+                      nombre_beneficiario: Esteban González
+                      id_beneficiario: '875412541'
+                      cuenta_beneficiario: '745852365'
+                      valor: 10
+                      entidad: BBVA
+                      tipo_producto: AH
+                status: success
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /transfer/logs:
+    get:
+      summary: Obtener listado de transferencias realizadas
+      description: |
+        Devuelve un listado de las transferencias realizadas a través de la API en un periodo de tiempo especificado. Incluye transferencias de todos los providers utilizados.
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+      operationId: getTransferLog
+      parameters:
+        - in: query
+          name: date_start
+          schema:
+            $ref: '#/components/schemas/Date'
+          required: true
+          description: Obtener transferencias desde esta fecha (inclusivo).
+        - in: query
+          name: date_end
+          schema:
+            $ref: '#/components/schemas/Date'
+          required: true
+          description: Obtener transferencias hasta esta fecha (inclusivo).
+      responses:
+        '200':
+          description: Listado de transferencias realizadas (preprocesadas, confirmadas y rechazadas).
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  result:
+                    type: array
+                    description: Lista de transferencias
+                    items:
+                      $ref: '#/components/schemas/TransferLog'
+              example:
+                result:
+                  - request_id: "aa9c12d87e7d44f895492ae19916bb8f"
+                    origin_account: "1320215875"
+                    destination_account: "01114200020099999999"
+                    destination_name: "Jose Perez"
+                    destination_institution_name: "BCP - Banco de Credito de Perú"
+                    currency: "PEN"
+                    amount: "1.00"
+                    concept: "Order ABC-099"
+                    created_at: "2022-09-21T20:05:59.567088Z"
+                    status: "CREATED"
+                    operation_id: null
+                  - request_id: "aa82bec874b24ef2851301c0a53bc764"
+                    origin_account: "3425771"
+                    destination_account: "3327728"
+                    destination_name: "Pedro Sanchez"
+                    destination_institution_name: "Santander"
+                    currency: "UYU"
+                    amount: "1.00"
+                    concept: "Order ABC-223"
+                    created_at: "2022-09-21T20:01:18.465180Z"
+                    status: "CONFIRMED"
+                    operation_id: "4296311"
+                  - request_id: "c67f84cd9f3d42cba32e1770e58dcc3b"
+                    origin_account: "3727779"
+                    destination_account: "3327728"
+                    destination_name: "Washington Rodriguez"
+                    destination_institution_name: "Santander"
+                    currency: "UYU"
+                    amount: "1.00"
+                    concept: "Order ABC-224"
+                    created_at: "2022-09-21T20:00:10.007988Z"
+                    status: "CONFIRMED"
+                    operation_id: "5416265"
+                status: success
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  '/transfer/logs/{request_id}':
+    parameters:
+      - in: path
+        name: request_id
+        schema:
+          type: string
+          example: '2c32abcd-0617-4a88-8ea7-16aab2c2c0ca'
+        required: true
+    get:
+      summary: Detalle de transferencia
+      description: Devuelve el detalle de una transferencia dado su request_id
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+      operationId: getTransferLogDetail
+      responses:
+        '200':
+          description: Detalle de transferencia
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  transfer:
+                    type: object
+                    schema:
+                      $ref: '#/components/schemas/TransferLog'
+              example:
+                {
+                  "status": "success",
+                  "transfer": {
+                    "amount": "10.00",
+                    "concept": "test",
+                    "created_at": "2022-04-22T16:00:14.706249Z",
+                    "currency": "UYU",
+                    "destination_account": "12345-234",
+                    "destination_institution_name": "Test Bank",
+                    "destination_name": "john doe",
+                    "operation_id": null,
+                    "origin_account": "12345678",
+                    "request_id": "7bdb70232f6341b786423bab0d5b1ef7",
+                    "status": null
+                  }
+                }
+        '404':
+          description: Transferencia no encontrada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorMessage'
+              example:
+                status: transfer_not_found
+                message: 'No encontrado.'
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /transfer/validate-account:
+    post:
+      summary: Comprobar que la cuenta sea válida
+      description: |
+        Comprueba que la cuenta sea válida (solo aplica a los proveedores Banco República de Uruguay y de Perú BBVA Netcash, Telebanking Corporativo e Interbank Corportativo)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: validateAccount
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                account:
+                  type: string
+                  description: Cuenta a validar
+                account_type:
+                  type: string
+                  description: Tipo de cuenta
+                bank_code:
+                  type: string
+                  description: Código del banco de la cuenta
+              required:
+                - account
+            example:
+              account: '002206345988'
+      responses:
+        '200':
+          description: Datos de validez de la cuenta
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  result:
+                    type: object
+                    properties:
+                      valid:
+                        type: boolean
+                        description: Indica si la cuenta es válida
+                      message:
+                        type: string
+                        description: Mensaje de validación
+                      data:
+                        nullable: true
+                        allOf:
+                          - $ref: '#/components/schemas/ValidateAccount'
+              examples:
+                ValidAccount:
+                  summary: Cuenta de destino válida
+                  value:
+                    status: success
+                    result:
+                      valid: true
+                      message: Valid destination account
+                      data:
+                        document_type: CI
+                        document_number: '54857425'
+                        beneficiary_name: Esteban González
+                        account_currency: UYU
+                        account_type: AH
+                InvalidAccount:
+                  summary: Cuenta de destino inválida
+                  value:
+                    status: success
+                    result:
+                      valid: false
+                      message: Invalid destination account
+                      data: null
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /transfer/batch/preprocess:
+    post:
+      summary: Preprocesar lote de transferencias
+      description: |
+        Aprueba y valida los datos necesarios para realizar las transferencias de un lote (solo disponible para el proveedor Telecrédito - BCP de Perú)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: preprocessBatchTransfer
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                data:
+                  type: string
+                  description: Datos de las transferencias a realizar
+                format:
+                  type: string
+                  description: Formato de los datos (base64 o json)
+              required:
+                - data
+                - format
+            example:
+              format: json
+      responses:
+        '200':
+          description: Transferencias preprocesadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  result:
+                    type: object
+                    properties:
+                      approved:
+                        type: boolean
+                        description: Indica si la operación se aprobó satisfactoriamente
+                      authorization_devices:
+                        type: array
+                        description: |
+                          Lista de métodos de verificación posibles para confirmar la transferencia (pin, tarjeta de coordenadas, token, etc), estará vacía si la transferencia se puede realizar sin método de verificación
+                        items:
+                          type: string
+                      message:
+                        type: string
+                        description: |
+                          Descripción del resultado de la operación (solo si ha ocurrido un error)
+                      request_id:
+                        type: string
+                        description: |
+                          Id de la operación, a usarse para confirmar la transferencia
+                      declined_payments:
+                        type: array
+                        description: |
+                          Lista de las operaciones que no se pudieron efectuar
+                        items:
+                          type: string
+              example:
+                result:
+                  approved: true
+                  authorization_devices:
+                    - data:
+                        - F-4
+                        - B-2
+                        - G-7
+                      type: cardCode
+                    - data: null
+                      type: pin
+                  declined_payments: []
+                  message: null
+                  request_id: 0b7d6b32d1be4c11bde21e7ddc08cc36
+                status: success
+          links:
+            TransferConfirm:
+              operationId: confirmBatchTransfer
+              parameters:
+                request_id: $response.body#/result/request_id
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /transfer/batch/confirm:
+    post:
+      summary: Confirmar un lote transferencia
+      description: |
+        Confirma un lote de transferencias ya preprocesadas (solo disponible para el proveedor Telecrédito - BCP de Perú)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: confirmBatchTransfer
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  description: |
+                    ID de la request retornada por el endpoint de preprocesar transferencia
+                authorization_type:
+                  type: string
+                  description: |
+                    Nombre del método de verificación a usar, corresponde al campo type de la lista de métodos de verificación retornados por el endpoint de preprocesar transferencia. De no ser necesario un método de verificación este parámetro queda vacío.
+                  default: ''
+                authorization_data:
+                  type: string
+                  description: |
+                    Valor de verificación (número de pin, respuesta de tarjeta de coordenadas, etc) si son varios valores, deben ir separados por coma.
+                  default: ''
+                authorization_device_number:
+                  type: string
+                  description: |
+                    Número de serie asignado al dispositivo de autenticación.
+                  default: ''
+              required:
+                - request_id
+                - authorization_type
+                - authorization_data
+                - authorization_device_number
+      responses:
+        '200':
+          description: Transferencias realizadas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  transfer:
+                    type: object
+                    properties:
+                      message:
+                        type: string
+                      success:
+                        type: boolean
+              example:
+                status: success
+                transfer:
+                  message: Transfer successful
+                  success: true
+  /transfer/batch/detail:
+    post:
+      summary: Obtener los detalles de un lote de transferencias
+      description: |
+        Devuelve el estado y los detalles de la transferencia (solo disponible para el proveedor Telecrédito - BCP de Perú)
+      tags:
+        - Transferencias
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: detailBatchTransfer
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                request_id:
+                  type: string
+                  description: |
+                    ID de la petición de confirmación de las transferencias
+                format:
+                  type: string
+                  description: |
+                    Formato en que se desea obtener los detalles de las transferencias(xls, csv, txt)
+                separator:
+                  type: string
+                  description: |
+                    Separador a utilizar en el formato de salida
+              required:
+                - request_id
+                - format
+      responses:
+        '200':
+          description: Detalles de la transferencias
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  result:
+                    type: object
+                    properties:
+                      success:
+                        type: boolean
+                        description: |
+                          Indica si la operación fue satisfactoria.
+                      file_result:
+                        type: object
+                        properties:
+                          data:
+                            type: string
+                            description: |
+                              Los datos de salida codificados en base64
+                          encoded_in:
+                            type: string
+                            description: |
+                              La codificación usada en los datos de salida (fijada a base64)
+                          format:
+                            type: string
+                            description: |
+                              El formato de salida de los datos
+                      meta:
+                        type: object
+              example:
+                status: success
+                result:
+                  success: true
+                  file_result:
+                    data: b3BlbmFwaTogMy4wLjAKaW5mbzoKICB0aXRsZTogUHJvbW
+                    encoded_in: base64
+                    format: csv
+                  meta:
+                    monto: 10
+                    moneda: PEN
+                    cuenta_origen: '548862541541'
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /provider/:
+    get:
+      summary: Listar proveedores
+      description: Lista todos los proveedores de datos disponibles en Prometeo
+      tags:
+        - Meta
+      operationId: getProviders
+      responses:
+        '200':
+          description: Proveedores listados exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    default: success
+                  providers:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        country:
+                          $ref: '#/components/schemas/Country'
+                        name:
+                          type: string
+              example:
+                providers:
+                  - code: test
+                    country: UY
+                    name: Test Provider
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      security:
+        - APIKeyAuth: []
+  '/provider/{provider_code}/':
+    parameters:
+      - in: path
+        name: provider_code
+        schema:
+          type: string
+          example: test
+        required: true
+    get:
+      summary: Detalle de proveedor
+      description: Detalles adicionales sobre el proveedor
+      tags:
+        - Meta
+      operationId: getProviderDetail
+      responses:
+        '200':
+          description: Proveedor listado exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  provider:
+                    type: object
+              example:
+                provider:
+                  auth_fields:
+                    - interactive: false
+                      name: username
+                      type: text
+                    - interactive: false
+                      name: password
+                      type: password
+                  country: UY
+                  name: test
+                  account_type:
+                    - name: corp
+                      label_es: Cuenta Corporativa
+                      label_en: Corporate Account
+                    - name: pers
+                      label_es: Cuenta Personal
+                      label_en: Personal Account
+                  logo: 'https://providers.prometeoapi.com/logos/test.png'
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '404':
+          description: El proveedor no existe
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    default: provider_doesnt_exist
+              example:
+                status: provider_doesnt_exist
+      security:
+        - APIKeyAuth: []
+  '/provider/{provider_code}/branches':
+    get:
+      summary: Lista las sucursales del proveedor
+      description: |
+        Lista las sucursales del proveedor dentro de una zona postal (solo aplica al proveedor BBVA Mexico)
+      tags:
+        - Meta
+      operationId: getProviderBranches
+      parameters:
+        - in: path
+          name: provider_code
+          schema:
+            type: string
+          required: true
+          description: Código del proveedor
+        - in: query
+          name: zipcode
+          schema:
+            type: string
+          required: true
+          description: Código postal
+      responses:
+        '200':
+          description: Sucursales listadas exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  branches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Branch'
+              example:
+                branches:
+                  - id: '4103'
+                    name: BBVA Pensiones
+                    note: ''
+                    segments:
+                      - ''
+                    availability:
+                      - ''
+                    location:
+                      address: 'Ermita Iztapalapa 560, Mexicaltzingo, CDMX'
+                      zipcode: '09080'
+                      latitude: 19.357867867552297
+                      longitude: -99.12138121849813
+                  - id: '20'
+                    name: BBVA Pensiones
+                    note: ''
+                    segments:
+                      - ''
+                    availability:
+                      - ''
+                    location:
+                      address: 'Av. Ricardo Flores Magon 383, Sta. Maria la Ribera, CDMX'
+                      zipcode: '06400'
+                      latitude: 19.455071703352008
+                      longitude: -99.15741532414522
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '404':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+      security:
+        - APIKeyAuth: []
+  '/provider/{provider_code}/atms':
+    get:
+      summary: Lista los cajeros del proveedor
+      description: |
+        Lista los cajeros del proveedor dentro de una zona postal (solo aplica al proveedor BBVA Mexico)
+      tags:
+        - Meta
+      operationId: getProviderAtms
+      parameters:
+        - in: path
+          name: provider_code
+          schema:
+            type: string
+          required: true
+          description: Código del proveedor
+        - in: query
+          name: zipcode
+          schema:
+            type: string
+          required: true
+          description: Código postal
+      responses:
+        '200':
+          description: Cajeros listados exitosamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  branches:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Branch'
+              example:
+                branches:
+                  - id: '1291'
+                    note: Cajero BBVA Suc Plaza Tenayuca
+                    services:
+                      - ''
+                    location:
+                      address: 'Calz. Vallejo 2000, San José de la Escalera, CDMX'
+                      zipcode: '07630'
+                      latitude: 19.528718022408754
+                      longitude: -99.16979198242075
+                  - id: '566'
+                    note: Cajero BBVA Soriana Los Heroes
+                    services:
+                      - ''
+                    location:
+                      address: 'Av. 20 de Noviembre, Los Héroes, Cancún, Q.R.'
+                      zipcode: '77518'
+                      latitude: 21.17578797604772
+                      longitude: -86.87373452685203
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '404':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+      security:
+        - APIKeyAuth: []
+  /task-result:
+    post:
+      summary: Verifica el estado de la tarea
+      description: |
+        Verifica el estado de la tarea, si esta completada retorna el resultado de la misma. (Solo aplica al proveedor Bancolombia Empresas de Colombia)
+      tags:
+        - Datos Transaccionales
+      operationId: getTaskResult
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                task_id:
+                  type: string
+                  default: 18824b652914f56ae9cd9f551a27b1c9
+                  description: Identificador de la tarea a consultar
+              required:
+                - task_id
+            example: null
+      responses:
+        '200':
+          description: Detalle del estado de la tarea
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  result:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Movement'
+              examples:
+                ConStatusSuccess:
+                  summary: Respuesta cuando el estado de la tarea es Success
+                  value:
+                    status: success
+                    result:
+                      - credit: ''
+                        date: 12/01/2017
+                        debit: 3500
+                        detail: 'RETIRO EFECTIVO CAJERO AUTOMATICO J.C. GOMEZ 1372, MONTEVIDEO TARJ: 4303090202018993'
+                        id: 890185180
+                        reference: '000000005084'
+                      - credit: ''
+                        date: 05/01/2017
+                        debit: 16000
+                        detail: 'RETIRO EFECTIVO CAJERO AUTOMATICO J.H Y OBES 1389, MONTEVIDEO TARJ: 4303090202018993'
+                        id: 1024917397
+                        reference: '000000002931'
+                      - credit: 98640
+                        date: 03/01/2017
+                        debit: ''
+                        detail: SUELDOS 123456TT RECIBIDA /Qualia Fintech S.R.L
+                        id: 1303899175
+                        reference: TR0003858408
+                ConStatusPending:
+                  summary: Respuesta cuando el estado de la tarea es Pending
+                  value:
+                    status: task_pending
+                    message: Result Pending. Still processing task
+        '400':
+          $ref: '#/components/responses/MissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      security:
+        - APIKeyAuth: []

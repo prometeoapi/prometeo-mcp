@@ -1,0 +1,209 @@
+openapi: 3.1.0
+info:
+  title: BCU API
+  description: Endpoints para la api de BCU (Central de Riesgos Crediticios)
+  contact:
+    name: Prometeo
+    url: 'https://prometeoapi.com'
+    email: info@prometeoapi.com
+  version: '1.1'
+servers:
+  - url: 'https://credit-risk.prometeoapi.net'
+    variables: {}
+    description: Pre-Production and Production
+components:
+  schemas:
+    ErrorMessage:
+      type: object
+      properties:
+        status:
+          type: string
+          default: 403
+        title:
+          type: string
+          default: Http Response Forbidden
+        detail:
+          type: string
+          default: Missing API key
+    Report:
+      type: object
+      properties:
+        Nombre:
+          type: string
+          description: Nombre de la persona consultada
+        Documento:
+          type: string
+          description: Documento consultado
+        SectorActividad:
+          type: string
+          description: Sector de la actividad de la persona consultada
+        Periodo:
+          type: string
+          description: Período consultado (YYYYMM)
+        RubrosValoresGenerales:
+          type: object
+          description: Valores generales de rubros
+        EntidadesRubrosValores:
+          type: object
+          description: Información sobre calificación
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key necesaria para hacer llamadas
+      name: X-API-Key
+      in: header
+  responses:
+    MissingAPIKey:
+      description: Falta API Key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example: |
+            {
+              "data": "null",
+              "errors": "[{"status": 403, "title": "Http Response Forbidden", "detail": "Missing API key"}]"
+            }
+security:
+  - ApiKeyAuth: []
+paths:
+  /report:
+    post:
+      summary: Reporte de deuda
+      tags:
+        - Información sobre la calificación crediticia.
+      description: |
+        Consulta la Central de Riesgos Crediticios y genera un reporte con la calificación crediticia.
+      security:
+        - APIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                document_type:
+                  type: string
+                  description: |
+                    Tipo de documento
+                    - `IDE` CEDULA DE IDENTIDAD
+                    - `RUC` REGISTRO UNICO TRIBUTARIO
+                    - `CPJ` CORRELATIVO P.JURIDICA
+                    - `BPS` DOC. SEGURIDAD SOCIAL
+                    - `REG` IDENTIFICACION REGISTRAL
+                    - `PAS` PASAPORTE
+                    - `BHU` NRO DE HIPOTECA PARA DEUDORES BHU
+                  enum:
+                    - IDE
+                    - RUC
+                    - CPJ
+                    - BPS
+                    - REG
+                    - PAS
+                    - BHU
+                document:
+                  type: string
+                  description: 'Número de documento.'
+                year:
+                  type: integer
+                  description: Año a realizar consulta.
+                month:
+                  type: integer
+                  description: Mes a realizar consulta.
+              required:
+                - document
+                - document_type
+                - year
+                - month
+            examples:
+              Report for Person DNI 13452138 (Year 2021 / Month 12):
+                value:
+                  document_type: IDE
+                  document: 13452138
+                  year: 2021
+                  month: 12
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: string
+                  data:
+                    $ref: '#/components/schemas/Report'
+              example:
+                errors: null
+                data:
+                  Nombre: <Nombre completo>
+                  Documento: UY IDE 000000000013452138
+                  SectorActividad: 97000 FAMILIAS
+                  Periodo: 202212
+                  RubrosValoresGenerales: [
+                  {
+                    Rubro: VIGENTE,
+                    MnPesos: 9878.19,
+                    MePesos: 1926.53,
+                    MnDolares: 226.68,
+                    MeDolares: 44.21
+                  },
+                  {
+                    Rubro: VIGENTE - NO AUTOLIQUIDABLE,
+                    MnPesos: 9878.19,
+                    MePesos: 1926.53,
+                    MnDolares: 226.68,
+                    MeDolares: 44.21
+                  },
+                  {
+                    Rubro: PREVISIONES TOTALES,
+                    MnPesos: 192.85,
+                    MePesos: 9.63,
+                    MnDolares: 4.43,
+                    MeDolares: 0.22
+                  },
+                  {
+                    Rubro: CONTINGENCIAS,
+                    MnPesos: 28695.6,
+                    MePesos: 0,
+                    MnDolares: 658.5,
+                    MeDolares: 0
+                  }]
+                  EntidadesRubrosValores: [
+                  {
+                    NombreEntidad: Banco Itaú Uruguay SA,
+                    Calificacion: 1C,
+                    RubrosValores: [
+                    {
+                      Rubro: VIGENTE,
+                      MnPesos: 9878.19,
+                      MePesos: 1926.53,
+                      MnDolares: 226.68,
+                      MeDolares: 44.21
+                    },
+                    {
+                      Rubro: VIGENTE - NO AUTOLIQUIDABLE,
+                      MnPesos: 9878.19,
+                      MePesos: 1926.53,
+                      MnDolares: 226.68,
+                      MeDolares: 44.21
+                    },
+                    {
+                      Rubro: PREVISIONES TOTALES,
+                      MnPesos: 192.85,
+                      MePesos: 9.63,
+                      MnDolares: 4.43,
+                      MeDolares: 0.22
+                    },
+                    {
+                      Rubro: CONTINGENCIAS,
+                      MnPesos: 28695.6,
+                      MePesos: 0,
+                      MnDolares: 658.5,
+                      MeDolares: 0
+                    }]
+                  }]
+        '403':
+          $ref: '#/components/responses/MissingAPIKey'

@@ -1,0 +1,944 @@
+openapi: 3.1.0
+info:
+  title: SAT API
+  description: Endpoints para la api del SAT
+  contact:
+    name: Prometeo
+    url: 'https://prometeoapi.com'
+    email: info@prometeoapi.com
+  version: 1.2.1
+servers:
+  - url: 'https://fiscal.prometeoapi.net/'
+    variables: {}
+    description: Pre-Production and Production
+  - url: 'https://fiscal.sandbox.prometeoapi.com/'
+    variables: {}
+    description: Sandbox
+components:
+  schemas:
+    ErrorMessage:
+      type: object
+      properties:
+        status:
+          type: string
+          default: error
+        message:
+          type: string
+    Date:
+      type: string
+      pattern: '\d\d/\d\d/\d{4}'
+      description: Fecha en formato DD/MM/YYYY
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key necesaria para hacer llamadas
+      name: X-API-Key
+      in: header
+    SessionKeyAuth:
+      type: apiKey
+      description: Clave de sesión que identifica al usuario en el SAT
+      name: session_key
+      in: query
+  parameters:
+    BillStatus:
+      in: query
+      name: status
+      schema:
+        type: string
+        default: any
+        enum:
+          - cancelled
+          - valid
+          - any
+      required: true
+      description: |
+        Estado del Comprobante, posibles valores:
+        - `cancelled`: Cancelado,
+        - `valid`: Vigente,
+        - `any`: Cualquier estado
+    BillAction:
+      in: query
+      name: action
+      schema:
+        type: string
+        default: list
+        enum:
+          - bulk_download
+          - metadata_download
+          - pdf_export
+          - list
+      required: true
+      description: |
+        Tipo de descarga a generar, posibles valores:
+        - `bulk_download` Descarga masiva,
+        - `metadata_download` Descarga de metadata,
+        - `pdf_export` Exportar resultados a pdf,
+        - `list` Lista las facturas encontradas
+    BillType:
+      in: query
+      name: type
+      schema:
+        type: string
+        default: estandar
+        enum:
+          - estandar
+          - acreditamiento_ieps
+          - aerolineas
+          - carta_porte
+          - certificado_destruccion
+          - comercio_exterior
+          - comercio_exterior_1_1
+          - compra_venta_divisas
+          - consumo_combustibles
+          - consumo_combustibles_1_1
+          - donatarias
+          - estado_cuenta_bancario
+          - estado_cuenta_combustibles_1_2
+          - estado_cuenta_combustibles_monederos_electronicos
+          - gastos_de_hidrocarburos
+          - ine_1.1
+          - ingresos_hidrocarburos
+          - instituciones_educativas_privadas
+          - leyendas_fiscales
+          - mis_cuentas
+          - notarios_publicos
+          - obras_artes_antiguedades
+          - otros_derechos_e_impuestos
+          - pago_en_especie
+          - persona_fisica_integrante_de_coordinado
+          - recepcion_pagos
+          - recibo_donativo
+          - recibo_pago_salarios
+          - recibo_pago_salarios_1_2
+          - sector_ventas_al_detalle
+          - servicios_construccion
+          - spei_tercero_a_tercero
+          - sustitucion_renovacion_vehicular
+          - terceros_1
+          - terceros_2
+          - timbre_fiscal_digital
+          - turista_o_pasajero_extranjero
+          - vales_despensa
+          - vehiculo_usado
+          - venta_vehiculos
+      required: false
+      description: |
+        Tipo de comprobante, posibles valores:
+        - `estandar` Estándar (sin complemento),
+        - `acreditamiento_ieps` Acreditamiento de IEPS,
+        - `aerolineas` Aerolíneas,
+        - `carta_porte` Carta Porte,
+        - `certificado_destruccion` Certificado de Destrucción,
+        - `comercio_exterior` Comercio Exterior,
+        - `comercio_exterior_1_1` Comercio Exterior 1.1,
+        - `compra_venta_divisas` Compra Venta de Divisas,
+        - `consumo_combustibles` Consumo de Combustibles,
+        - `consumo_combustibles_1_1` Consumo De Combustibles 1.1,
+        - `donatarias` Donatarias,
+        - `estado_cuenta_bancario` Estado De Cuenta Bancario,
+        - `estado_cuenta_combustibles_1_2` Estado de Cuenta Combustibles 1.2,
+        - `estado_cuenta_combustibles_monederos_electronicos` Estado de cuenta de combustibles de monederos electrónicos,
+        - `gastos_de_hidrocarburos` Gastos de Hidrocarburos,
+        - `ine_1.1` INE 1.1,
+        - `ingresos_hidrocarburos` Ingresos de Hidrocarburos,
+        - `instituciones_educativas_privadas` Instituciones Educativas Privadas (Pago de colegiatura),
+        - `leyendas_fiscales` Leyendas Fiscales,
+        - `mis_cuentas` Mis Cuentas,
+        - `notarios_publicos` Notarios Públicos,
+        - `obras_artes_antiguedades` Obras de artes y antiguedades,
+        - `otros_derechos_e_impuestos` Otros Derechos e Impuestos,
+        - `pago_en_especie` Pago en Especie,
+        - `persona_fisica_integrante_de_coordinado` Persona Física Integrante de Coordinado,
+        - `recepcion_pagos` Recepción de Pagos,
+        - `recibo_donativo` Recibo de donativo,
+        - `recibo_pago_salarios` Recibo de Pago de Salarios,
+        - `recibo_pago_salarios_1_2` Recibo de Pago de Salarios 1.2,
+        - `sector_ventas_al_detalle` Sector de Ventas al Detalle (Detallista),
+        - `servicios_construccion` Servicios de construcción,
+        - `spei_tercero_a_tercero` SPEI de Tercero a Tercero,
+        - `sustitucion_renovacion_vehicular` Sustitución y renovación vehicular,
+        - `terceros_1` Terceros,
+        - `terceros_2` Terceros,
+        - `timbre_fiscal_digital` Timbre Fiscal Digital,
+        - `turista_o_pasajero_extranjero` Turista o Pasajero Extranjero,
+        - `vales_despensa` Vales de Despensa,
+        - `vehiculo_usado` Vehículo Usado,
+        - `venta_vehiculos` Venta de Vehiculos
+  responses:
+    MissingAPIKey:
+      description: Falta API Key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example: |
+            {
+              "status": "error",
+              "message": "Missing API key"
+            }
+    InvalidOrMissingParameters:
+      description: Parámetros inválidos o ausentes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example: |
+            {
+              "status": "error",
+              "message": "Invalid parameters: date_end"
+            }
+    MissingCredentials:
+      description: Faltan credenciales
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example:
+            status: missing_credentials
+            missing_fields:
+              - password
+    NotFound:
+      description: Recurso no encontrado
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+                default: not_found
+              message:
+                type: string
+          example:
+            status: not_found
+            message: Not found
+    XMLDownload:
+      description: Descarga exitosa
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              status:
+                type: string
+              download:
+                type: object
+                properties:
+                  download_url:
+                    type: string
+          example:
+            download:
+              download_url: /download/4f3882b1d413f761ced91b6bd583f6ee.xml
+            status: success
+security:
+  - ApiKeyAuth: []
+    SessionKeyAuth: []
+tags:
+  - name: Autenticación
+  - name: Información
+  - name: Descarga de facturas
+  - name: Acuses
+paths:
+  /login/:
+    post:
+      summary: Login
+      description: Iniciar sesión en el sat
+      tags:
+        - Autenticación
+      security:
+        - APIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                provider:
+                  type: string
+                  description: 'Proveedor de datos, debe ser siempre `sat`'
+                  default: sat
+                rfc:
+                  type: string
+                  description: Número de RFC
+                password:
+                  type: string
+                  description: Contraseña de acceso
+                scope:
+                  type: string
+                  enum:
+                    - cfdi
+                    - siat
+                  default: cfdi
+                  description: |
+                    Tipo de login a realizar, debe ser `cfdi` para la descarga de facturas y `siat` para consultar la opinión de cumplimiento y descarga de acuses
+              required:
+                - provider
+                - rfc
+                - password
+                - scope
+            example:
+              provider: sat
+              rfc: RFC
+              password: PASSWORD
+              scope: cfdi
+            examples:
+              Login sandbox:
+                value:
+                  provider: sat
+                  rfc: 100000000000
+                  password: sandbox_password
+                  scope: cfdi
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    oneOf:
+                      - type: string
+                        enum:
+                          - wrong_credentials
+                        description: Usuario o password inválidos
+                      - type: string
+                        enum:
+                          - missing_credentials
+                        description: Falta un campo de credenciales
+                      - type: string
+                        enum:
+                          - logged_in
+                        description: Sesión iniciada correctamente
+                  key:
+                    type: string
+                    description: |
+                      Session key wich must be used in all subsequent requests.
+              examples:
+                Success:
+                  summary: Login exitoso
+                  value:
+                    status: logged_in
+                    key: 163d06b2-3378-4383-9868-71c2b6fb28da
+                MissingCredentials:
+                  summary: Faltan credenciales
+                  value:
+                    status: missing_credentials
+                    missing_fields:
+                      - password
+                WrongCredentials:
+                  summary: Credenciales incorrectas
+                  value:
+                    status: wrong_credentials
+        '400':
+          $ref: '#/components/responses/MissingCredentials'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /logout/:
+    get:
+      summary: Logout
+      description: |
+        Cierra la sesión actual en el SAT Luego de realizar el logout, la `session_key` usada ya no será válida para hacer más llamadas.
+      tags:
+        - Autenticación
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: logout
+      responses:
+        '200':
+          description: Logout exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    default: logged_out
+              example:
+                status: logged_out
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /company-info/:
+    get:
+      summary: Información de la empresa
+      description: 'Obtiene información como razon social, fecha de constitución, rubro, etc.'
+      tags:
+        - Información
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: getCompanyInfo
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                Company:
+                  summary: Respuesta para persona moral (empresa)
+                  value:
+                    info:
+                      additional_attributes:
+                        - attribute: Persona Moral
+                          registration_date: 26/10/2010
+                        - attribute: PATRON PM
+                          registration_date: 02/05/2011
+                        - attribute: ACTIVIDAD MEDIA PM
+                          registration_date: 26/10/2010
+                      fiscal:
+                        activities:
+                          - activity: Servicios de consultoría en administración
+                            percent: '100'
+                            registration_date: 26/10/2010
+                        obligations:
+                          - fundament: 'LIVA: Artículos 1, 2, 2-A, 5-D, CFF: Artículos 6, 12, 20, 31'
+                            motive: Por  la venta de bienes y/o servicios.
+                            obligation: Presentar la  declaración y pago definitivo mensual  de Impuesto al Valor Agregado (IVA) .
+                            period: A más tardar el día 17 del mes inmediato posterior al periodo que corresponda.
+                            registration_date: 26/10/2010
+                          - fundament: 'LIVA: Artículo 32, fracciones V y VIII'
+                            motive: Cuando se hayan realizado operaciones con terceros para efectos del impuesto al valor agregado
+                            obligation: Presentar la  declaración mensual  donde se informe sobre las operaciones con terceros para efectos de Impuesto al Valor Agregado (IVA).
+                            period: A más tardar el día 17 del mes inmediato posterior al periodo que corresponda.
+                            registration_date: 26/10/2010
+                        regimes:
+                          - regime: Régimen General de Ley Personas Morales
+                            registration_date: 26/10/2010
+                      info:
+                        constitution_date: 26/10/2010
+                        reason: Sample Company Inc.
+                        rfc: ABC12345D6
+                        status: ACTIVO
+                        status_date: 28/10/2010
+                        status_detail: ACTIVO
+                      location:
+                        address: Fake street 1234
+                        colony: Sample colony
+                        email: test@company.com
+                        federative_entity: NUEVO LEON
+                        locality: SAN PEDRO GARZA GARCIA
+                        municipality: SAN PEDRO GARZA GARCIA
+                        phone1: 12-345678
+                        phone2: ''
+                        status: Domicilio sin verificar
+                        zip_code: '12345'
+                      type: company
+                    status: success
+                Person:
+                  summary: Respuesta para persona fisica
+                  value:
+                    info:
+                      additional_attributes:
+                        - attribute: Persona Fisica
+                          registration_date: 01/01/2007
+                        - attribute: PRIM EXENTO PF
+                          registration_date: 17/01/2019
+                      fiscal:
+                        activities:
+                          - activity: Socio o accionista
+                            percent: '5'
+                            registration_date: 12/03/2018
+                          - activity: 'Siembra, cultivo y cosecha de otras hortalizas y semillas de hortalizas'
+                            percent: '95'
+                            registration_date: 31/01/2014
+                        obligations: []
+                        regimes:
+                          - regime: Régimen de Ingresos por Dividendos (socios y accionistas)
+                            registration_date: 12/03/2018
+                          - regime: 'Régimen de Actividades Agrícolas, Ganaderas, Silvícolas y Pesqueras PF y PM'
+                            registration_date: 31/01/2014
+                      info:
+                        birth_date: 17/12/1986
+                        curp: ABCD123455EFGH
+                        name: JOHN DOE
+                        rfc: ABC1234567B8
+                        status: ACTIVO
+                        status_date: 05/07/2011
+                        status_detail: ACTIVO
+                      location:
+                        address: Fake street 1234
+                        colony: Fake colony
+                        email: ''
+                        federative_entity: CDMX
+                        locality: CDMX
+                        municipality: CDMX
+                        phone1: 12-3445788
+                        phone2: ''
+                        status: Domicilio sin verificar
+                        zip_code: '72570'
+                      type: person
+                    status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /cfdi/emitted/:
+    parameters:
+      - in: query
+        name: date_start
+        schema:
+          $ref: '#/components/schemas/Date'
+        required: true
+        description: Fecha Inicial de Emisión
+        allowReserved: true
+      - in: query
+        name: date_end
+        schema:
+          $ref: '#/components/schemas/Date'
+        required: true
+        description: Fecha Final de Emisión
+        allowReserved: true
+      - $ref: '#/components/parameters/BillStatus'
+      - $ref: '#/components/parameters/BillAction'
+      - $ref: '#/components/parameters/BillType'
+    get:
+      summary: Listado y descarga de Facturas Emitidas
+      tags:
+        - Descarga de facturas
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  emitted:
+                    type: array
+                    items:
+                      type: object
+              examples:
+                List:
+                  summary: Listado de facturas
+                  value:
+                    emitted:
+                      - certification_date: '2018-08-29T20:50:04'
+                        certification_pac: FIN1203015JA
+                        effect: Ingreso
+                        emitted_date: '2018-08-29T20:50:03'
+                        emitter_reason: John Doe
+                        emitter_rfc: ABCD90408BJ2
+                        id: DDAA8B0B-4FDC-43D7-A633-F307B898AB3C
+                        receiver_reason: Jane Doe
+                        receiver_rfc: ZXYW740519633
+                        status: valid
+                        total_value: 174.36
+                      - certification_date: '2018-08-30T09:43:55'
+                        certification_pac: FIN1203015JA
+                        effect: Ingreso
+                        emitted_date: '2018-08-30T09:43:55'
+                        emitter_reason: John Doe
+                        emitter_rfc: ABCD90408BJ2
+                        id: EB758D6A-07F5-4947-ACD5-98BF0B61654F
+                        receiver_reason: Company Name
+                        receiver_rfc: ASD030224ES6
+                        status: valid
+                        total_value: 106.22
+                      - certification_date: '2018-06-12T05:34:19'
+                        certification_pac: FIN1203015JA
+                        effect: Ingreso
+                        emitted_date: '2018-06-12T05:34:19'
+                        emitter_reason: John Doe
+                        emitter_rfc: ABCD790408BJ2
+                        id: FB8C12A1-DA2C-47B0-B2FF-F10A718DB673
+                        receiver_reason: Company Name
+                        receiver_rfc: ZXC050315240
+                        status: cancelled
+                        total_value: 231.41
+                    status: success
+                BulkDownload:
+                  summary: Descarga masiva o de metadata exitosa
+                  value:
+                    emitted:
+                      - request_id: 50AD2BA1-27AE-4CC3-84FD-265E585A1F67
+                      - request_id: A6326A6B-68D0-4580-9FAD-A22F987FE43E
+                    status: success
+                PdfExport:
+                  summary: Exportación de PDF exitosa
+                  value:
+                    emitted:
+                      - pdf_url: /pdf/655ea3b7d0ec5fa1914aca7809e72449.pdf
+                    status: success
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  '/cfdi/emitted/{id}/':
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          example: A1111111-EFF-1234-5678-ABCDEF123456
+        required: true
+        description: 'Folio fiscal, retornado como campo `id` al listar facturas'
+    get:
+      summary: Descarga individual de XML de Facturas Emitidas
+      tags:
+        - Descarga de facturas
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/XMLDownload'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /cfdi/received/:
+    parameters:
+      - in: query
+        name: year
+        schema:
+          type: integer
+          default: 2019
+        description: Año de emisión
+        required: true
+      - in: query
+        name: month
+        schema:
+          type: integer
+          default: 10
+        required: true
+      - $ref: '#/components/parameters/BillStatus'
+      - $ref: '#/components/parameters/BillAction'
+      - $ref: '#/components/parameters/BillType'
+    get:
+      summary: Listado y descarga de Facturas Recibidas
+      tags:
+        - Descarga de facturas
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  received:
+                    type: object
+              examples:
+                BulkDownload:
+                  summary: Descarga masiva o de metadata exitosa
+                  value:
+                    received:
+                      request_id: CAF80916-71AC-4CEA-BECF-F2AC3F394948
+                    status: success
+                PdfExport:
+                  summary: Exportación de PDF exitosa
+                  value:
+                    received:
+                      pdf_url: /pdf/5e0039b00fe101d11114576c2acc2a1b.pdf
+                    status: success
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  '/cfdi/received/{id}/':
+    parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          example: B1111111-EFF-1234-5678-ABCDEF123456
+        description: 'Folio fiscal, retornado como campo `id` al listar facturas recibidas'
+        required: true
+    get:
+      summary: Descarga individual de XML de Facturas Recibidas
+      tags:
+        - Descarga de facturas
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/XMLDownload'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /cfdi/download/:
+    get:
+      summary: Listar Descargas de CFDI disponibles
+      tags:
+        - Descarga de facturas
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  downloads:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        count:
+                          type: integer
+                        request_id:
+                          type: string
+                        type:
+                          type: string
+              example:
+                downloads:
+                  - count: 2
+                    request_id: CAF80916-71AC-4CEA-BECF-F2AC3F394948
+                    type: CFDI
+                  - count: 73
+                    request_id: 4B7659B0-1EEA-4200-BC26-F6826E6189B1
+                    type: Metadata
+                status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  '/cfdi/download/{request_id}/':
+    parameters:
+      - schema:
+          type: string
+          example: FFFFFF66-ABCD-ABCD-1234-ABC123456789
+        name: request_id
+        in: path
+        required: true
+    get:
+      summary: Obtener Descarga de CFDI
+      tags:
+        - Descarga de facturas
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/XMLDownload'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /ccee/acknowledgment/:
+    parameters:
+      - in: query
+        name: year
+        description: Año
+        schema:
+          type: integer
+          default: 2019
+        required: true
+      - in: query
+        name: month_start
+        description: Mes inicial
+        schema:
+          type: integer
+          default: 1
+        required: true
+      - in: query
+        name: month_end
+        description: Mes final
+        schema:
+          type: integer
+          default: 6
+        required: true
+      - in: query
+        name: motive
+        description: |
+          Motivo
+          - `all` Todos
+          - `af` Acto de Fiscalización
+          - `de` Devolución
+          - `co` Compensación
+          - `fc` Fiscalización Compulsa
+          - `monthly` Envío Mensual
+        schema:
+          type: string
+          default: all
+          enum:
+            - all
+            - af
+            - de
+            - co
+            - fc
+            - monthly
+      - in: query
+        name: document_type
+        description: |
+          Tipo de archivo
+          - `all` Todos
+          - `ct` Catálogos de Cuentas
+          - `b` Balanzas de Comprobación
+          - `pl` Pólizas del Periodo
+          - `xf` Auxiliares de Folios
+          - `xc` Auxiliares de Cuentas
+        schema:
+          type: string
+          default: all
+          enum:
+            - all
+            - ct
+            - b
+            - pl
+            - xf
+            - xc
+      - in: query
+        name: status
+        description: |
+          Estatus
+          - `all` Todos
+          - `received` Recibidos
+          - `accepted` Aceptados
+          - `rejected` Rechazados
+        schema:
+          type: string
+          default: all
+          enum:
+            - all
+            - received
+            - accepted
+            - rejected
+      - in: query
+        name: send_type
+        description: |
+          Tipo de envio
+          - `all` Todos
+          - `n` Normal
+          - `c` Complementaria
+        schema:
+          type: string
+          default: all
+          enum:
+            - all
+            - 'n'
+            - c
+    get:
+      summary: Listar Acuses
+      description: Listar acuses de la aplicación de contabilidad electrónica
+      tags:
+        - Acuses
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  results:
+                    type: array
+                    items:
+                      type: object
+              example:
+                results:
+                  - document_type: Balanzas de Comprobación
+                    file_name: MOP1010266D3201801BN.zip
+                    id: '0002180100000000325368'
+                    motive: Envío Mensual
+                    period: 2018-01
+                    reception_date: '15/05/2019 12:10:02'
+                    send_type: Normal
+                    status: Aceptado
+                  - document_type: Balanzas de Comprobación
+                    file_name: MOP1010266D3201802BN.zip
+                    id: '0002180200000000313193'
+                    motive: Envío Mensual
+                    period: 2018-02
+                    reception_date: '15/05/2019 12:10:41'
+                    send_type: Normal
+                    status: Aceptado
+                  - document_type: Balanzas de Comprobación
+                    file_name: MOP1010266D3201803BN.zip
+                    id: '0002180300000000303749'
+                    motive: Envío Mensual
+                    period: 2018-03
+                    reception_date: '15/05/2019 12:31:45'
+                    send_type: Normal
+                    status: Aceptado
+                status: success
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  '/ccee/acknowledgment/{document_id}':
+    parameters:
+      - in: path
+        name: document_id
+        schema:
+          type: string
+          example: '0001111100000000111111'
+        description: 'Id del acuse, retornado en el listado de acuses'
+        required: true
+    get:
+      summary: Descargar Acuse
+      tags:
+        - Acuses
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      responses:
+        '200':
+          $ref: '#/components/responses/XMLDownload'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /obligations/:
+    get:
+      summary: Opinión de cumplimiento
+      description: Obtiene información de opinión de cumplimiento
+      tags:
+        - Opinión de cumplimiento
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+      operationId: obligations
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+              examples:
+                Pending:
+                  summary: Respuesta de usuario con obligaciones pendientes
+                  value:
+                    obligations:
+                      credits:
+                        - 152112177429527C12005
+                      obligations:
+                        - name: Pago provisional mensual de ISR por servicios profesionales. Régimen deActividades Empresariales y Profesionales.
+                          periods: Enero/2014
+                      pdf_url: /pdf/bd13ff994b8f855cfae856221e384c8d.pdf
+                    status: success
+                Uptodate:
+                  summary: Respuesta de usuario sin obligaciones pendientes
+                  value:
+                    obligations:
+                      credits: []
+                      obligations: []
+                      pdf_url: /pdf/bd13ff994b8f855cfae856221e384c8d.pdf
+                    status: success
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'

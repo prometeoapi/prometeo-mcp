@@ -1,0 +1,250 @@
+openapi: 3.0.0
+info:
+  title: "CEP"
+  version: "1.0.0"
+  description: "API endpoints for querying CEP issued by Banxico."
+  contact:
+    email: info@prometeoapi.com
+    name: Prometeo
+    url: "https://prometeoapi.com"
+
+servers:
+  - url: "https://fiscal.prometeoapi.net"
+    description: "Production"
+
+components:
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: "API Key required to make calls"
+      name: X-API-Key
+      in: header
+
+  schemas:
+    CepResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          example: "success"
+        cep:
+          type: object
+          additionalProperties: false
+          properties:
+            account_beneficiary:
+              type: string
+              example: "002569934440610924"
+            account_sender:
+              type: string
+              example: "014733358109857978"
+            amount:
+              type: number
+              example: 0.01
+            available:
+              type: boolean
+              example: true
+            beneficiary_name:
+              type: string
+              example: "CHAPULIN COLORADO"
+            beneficiary_rfc:
+              type: string
+              example: "KIYR010412WI1"
+            description:
+              type: string
+              example: "Transfer Concept"
+            iva:
+              type: number
+              example: 0.0
+            operation_date:
+              type: string
+              format: date-time
+              example: "2024-09-13T00:00:00-06:00"
+            operation_date_cep:
+              type: string
+              format: date-time
+              example: "2024-09-13T14:57:28-06:00"
+            sender_name:
+              type: string
+              example: "TEST COMPANY 1233"
+            sender_rfc:
+              type: string
+              example: "GIHE001007CRP"
+            certificate_serial_number:
+              type: string
+              example: "00001000000599999999"
+            signature:
+              type: string
+              example: "asd9AsrQMsLQPKCqv1HHeOVz9yI...."
+            beneficiary_bank_key:
+              type: string
+              example: "80002"
+            sender_bank_key:
+              type: string
+              example: "90014"
+            clave_rastreo:
+              type: string
+              example: "CR999999999999999"
+            cadena_original:
+              type: string
+              example: "..."
+            url_zip:
+              type: string
+              example: "/cep/CEP-20240913-CR999999999999999.zip"
+
+    ErrorResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: "Lo sentimos, por el momento no es posible generar el CEP. Operación no encontrada. El SPEI no ha recibido una orden de pago que cumpla con el criterio de búsqueda especificado. Se recomienda verificar la información o consulte con su institución financiera."
+
+    ErrorNotFoundResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          example: "not_found"
+        message:
+          type: string
+          example: "Not found"
+
+    InvalidParamsResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          example: "invalid_params"
+        message:
+          type: string
+          example: "Invalid parameters: operation_date"
+
+    InvalidAccountResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: "La cuenta clabe ingresada es inválida. Favor de verificar."
+
+    InvalidAmountResponse:
+      type: object
+      additionalProperties: false
+      properties:
+        status:
+          type: string
+          example: "error"
+        message:
+          type: string
+          example: "El monto ingresado es inválido. Favor de verificar."
+
+    Error400Response:
+      type: object
+      additionalProperties: false
+      oneOf:
+        - $ref: "#/components/schemas/InvalidAccountResponse"
+        - $ref: "#/components/schemas/InvalidAmountResponse"
+        - $ref: "#/components/schemas/InvalidParamsResponse"
+
+security:
+  - APIKeyAuth: []
+
+paths:
+  /cep/:
+    post:
+      summary: "Query CEP"
+      description: "Queries a CEP (Comprobante Electronico de Pago) issued by Banxico for a given transfer."
+      tags:
+        - CEP
+      security:
+        - APIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: string
+                  example: "0.01"
+                beneficiary_account:
+                  type: string
+                  example: "021910063860653729"
+                clave_rastreo:
+                  type: string
+                  example: "CR17175896822480742"
+                operation_date:
+                  type: string
+                  example: "05/06/2024"
+                sender_bank_key:
+                  type: string
+                  example: "90646"
+                beneficiary_bank_key:
+                  type: string
+                  example: "40021"
+              required:
+                - amount
+                - beneficiary_account
+                - clave_rastreo
+                - operation_date
+                - sender_bank_key
+      responses:
+        "200":
+          description: "CEP query was successful."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CepResponse"
+        "400":
+          description: "Bad request due to invalid parameters."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error400Response"
+        "404":
+          description: "Resource not found or incorrect query."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorResponse"
+
+  /cep/{cep_zip}:
+    get:
+      summary: "Download CEP ZIP file"
+      description: "Downloads the ZIP file for the specified CEP."
+      tags:
+        - CEP
+      security:
+        - APIKeyAuth: []
+      parameters:
+        - name: cep_zip
+          in: path
+          required: true
+          description: "The CEP zip file identifier"
+          schema:
+            type: string
+            example: "CEP-20240913-CR999999999999999.zip"
+      responses:
+        "200":
+          description: "ZIP file containing CEP data."
+          content:
+            application/zip:
+              schema:
+                type: string
+                format: binary
+        "404":
+          description: "Resource not found."
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorNotFoundResponse"
