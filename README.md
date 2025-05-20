@@ -170,6 +170,16 @@ Obtains transaction history (movements) for a specific account within a defined 
 
 Securely terminates an active banking session, ensuring proper cleanup of authentication tokens and session data.
 
+##  OpenAPI Resources
+
+### `openapi://all`
+
+Lists all available OpenAPI resources. From this list you can select a resource to read.
+
+### `openapi://{document_id}`
+
+Reads a specific OpenAPI resource by its ID. From this resource you can generate client code to interact with the any Prometeo API.
+
 ---
 
 ### 💡 Prompt Examples
