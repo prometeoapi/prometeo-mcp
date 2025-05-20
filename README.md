@@ -1,15 +1,15 @@
 # Prometeo MCP Server
 
-A server implementation for MCP (Modular Control Platform) to connect Prometeo API. Include functions to access banking information, validate accounts and query CURP.
+A server implementation for MCP (Model Context Protocol) to connect Prometeo API. Include functions to access banking information, validate accounts and query CURP.
 
 ---
 
 ## 🚀 Features
 
 - ✅ Python 3.11+
-- ✅ Pydantic v2.x with `ConfigDict`
-- ✅ `mcp[cli] >= 1.6.0` integration
-- ✅ Prometeo API SDK v2.0.1
+- ✅ Pydantic v2.x
+- ✅ FastMCP integration
+- ✅ Prometeo API SDK
 
 ---
 
@@ -39,7 +39,7 @@ uv pip install -e .
 
 ## 🧠 Running the Application in MCP-Compatible LLMs
 
-This project supports MCP (Multi-agent Control Protocol) integration and can be configured for execution inside LLM tools or agents that support external server launching.
+This project supports MCP (Model Context Protocol) integration and can be configured for execution inside LLM tools or agents that support external server launching.
 
 Below are configuration examples for different LLMs:
 
