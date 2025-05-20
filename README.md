@@ -176,7 +176,7 @@ Securely terminates an active banking session, ensuring proper cleanup of authen
 
 To see how to interact with this MCP server via supported LLMs, check out:
 
-📁 [`examples/prompts.txt`](examples/prompts.txt)
+📁 [`examples/prompts.md`](examples/prompts.md)
 
 It contains example prompts you can copy and paste into Claude, ChatGPT (with MCP), or any other compatible LLM to trigger real server calls and test behavior.
 
