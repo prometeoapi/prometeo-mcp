@@ -9,7 +9,7 @@ authors = [{ name = "Prometeo API", email = "dev@prometeoapi.com" }]
 dependencies = [
     "pydantic<=2.11",
     "mcp[cli]<=1.8.1",
-    "prometeo==2.0.3",
+    "prometeo==2.0.4",
     "python-dotenv<=1.1.0",
     "pyyaml<=6.0.2",
 ]
