@@ -113,6 +113,12 @@ async def validate_account(
             description=get_param_description("account_type")
         ),
     ] = None,
+    beneficiary_name: Annotated[
+        Optional[str],
+        Field(
+            description="Name of the account holder"
+        ),
+    ] = None,
 ):
     """Validate an account with Prometeo"""
     try:
@@ -125,6 +131,7 @@ async def validate_account(
             document_type=document_type,
             branch_code=branch_code,
             account_type=account_type,
+            beneficiary_name=beneficiary_name,
         )
         return {
             "validation_id": validation_id,
