@@ -1,0 +1,486 @@
+openapi: 3.1.0
+info:
+  title: Identity API
+  description: Endpoints para la api de identidad
+  contact:
+    name: Prometeo
+    url: "https://prometeoapi.com"
+    email: info@prometeoapi.com
+  version: "2.1"
+servers:
+  - url: "https://identity.prometeoapi.net"
+    variables: {}
+    description: Pre-Production and Production
+  - url: "https://identity.sandbox.prometeoapi.com"
+    variables: {}
+    description: Sandbox
+components:
+  schemas:
+    CURPResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            document_data:
+              type: object
+            personal_data:
+              type: object
+    MigrationsResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            document_data:
+              type: object
+            personal_data:
+              type: object
+    DocumentLostResponse:
+      type: object
+      properties:
+        data:
+          type: object
+          required:
+            - lost
+          properties:
+            lost:
+              type: boolean
+              description: Indica si se encuentra extraviado o no el documento
+            date:
+              type: string
+              description: Fecha de radicado el registro de extravío
+            full_name:
+              type: string
+              description: Nombre completo
+            document_type:
+              type: string
+              description: Tipo de documento con que realizó el trámite
+            document_number:
+              type: string
+              description: Número de documento con que realizó el trámite
+            consecutive_number:
+              type: string
+              description: Identificador de la constancia de la pérdida del documento
+            document_lost:
+              type: object
+              properties:
+                document_type:
+                  type: string
+                  description: Tipo de documento extraviado
+                document_number:
+                  type: string
+                  description: Número del documento extraviado
+            filename:
+              type: string
+              description: Nombre del archivo PDF generado con la constancia
+        errors:
+          nullable: true
+          allOf:
+            - type: object
+              properties:
+                code:
+                  type: integer
+                detail:
+                  type: string
+    ErrorResponse:
+      type: object
+      properties:
+        errors:
+          type: object
+        data:
+          default: null
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key necesaria para hacer llamadas
+      name: X-API-Key
+      in: header
+  responses:
+    MissingAPIKey:
+      description: Falta API Key
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            data: null
+            error: Missing API key
+    InvalidOrMissingParameters:
+      description: Parametros invalidos o ausentes
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+          example:
+            data: null
+            error: "Invalid parameters: date_end"
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: CURP
+  - name: Migraciones Perú
+paths:
+  /curp/query:
+    post:
+      summary: Consulta por CURP
+      tags:
+        - CURP
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                curp:
+                  type: string
+                  description: El CURP de la persona a consultar
+              required:
+                - curp
+            examples:
+              CURP sandbox:
+                value:
+                  curp: ABCD880304HDWXYZ45
+      responses:
+        "200":
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CURPResponse"
+              example:
+                errors: null
+                data:
+                  document_data:
+                    foja: ""
+                    claveEntidadRegistro: "25"
+                    numActa: "00064"
+                    tomo: ""
+                    anioReg: "1988"
+                    municipioRegistro: GUASAVE
+                    libro: "0001"
+                    entidadRegistro: SINALOA
+                    claveMunicipioRegistro: "011"
+                  personal_data:
+                    sexo: HOMBRE
+                    entidad: DISTRITO FEDERAL
+                    nacionalidad: MEXICO
+                    statusCurp: RCN
+                    nombres: MARTIN ALFONSO
+                    segundoApellido: PONCE
+                    claveEntidad: DF
+                    docProbatorio: 1
+                    fechaNacimiento: 04/03/1988
+                    primerApellido: MEXIA
+                    curp: ABCD880304HDFXNR45
+        "400":
+          $ref: "#/components/responses/InvalidOrMissingParameters"
+        "401":
+          $ref: "#/components/responses/MissingAPIKey"
+      security:
+        - APIKeyAuth: []
+  /curp/reverse-query:
+    post:
+      summary: Consulta por datos personales
+      tags:
+        - CURP
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                state:
+                  type: string
+                  description: |
+                    Codigo de estado
+                    - `AS` Aguascalientes
+                    - `BC` Baja California
+                    - `BS` Baja California Sur
+                    - `CC` Campeche
+                    - `CL` Coahuila
+                    - `CM` Colima
+                    - `CS` Chiapas
+                    - `CH` Chihuahua
+                    - `DF` Ciudad de México
+                    - `DG` Durango
+                    - `GT` Guanajuato
+                    - `GR` Guerrero
+                    - `HG` Hidalgo
+                    - `JC` Jalisco
+                    - `MC` Estado de México
+                    - `MN` Michoacán
+                    - `MS` Morelos
+                    - `NT` Nayarit
+                    - `NL` Nuevo León
+                    - `OC` Oaxaca
+                    - `PL` Puebla
+                    - `QT` Querétaro
+                    - `QR` Quintana Roo
+                    - `SP` San Luis Potosí
+                    - `SL` Sinaloa
+                    - `SR` Sonora
+                    - `TC` Tabasco
+                    - `TS` Tamaulipas
+                    - `TL` Tlaxcala
+                    - `VZ` Veracruz
+                    - `YN` Yucatán
+                    - `ZS` Zacateca
+                    - `NE` Nacido en el extranjero
+                  enum:
+                    - AS
+                    - BC
+                    - BS
+                    - CC
+                    - CL
+                    - CM
+                    - CS
+                    - CH
+                    - DF
+                    - DG
+                    - GT
+                    - GR
+                    - HG
+                    - JC
+                    - MC
+                    - MN
+                    - MS
+                    - NT
+                    - NL
+                    - OC
+                    - PL
+                    - QT
+                    - QR
+                    - SP
+                    - SL
+                    - SR
+                    - TC
+                    - TS
+                    - TL
+                    - VZ
+                    - YN
+                    - ZS
+                    - NE
+                birthdate:
+                  type: string
+                  description: "Fecha de nacimiento, formato DD/MM/YYYY"
+                  format: '\d\d/\d\d/\d{4}'
+                name:
+                  type: string
+                  description: Nombres
+                first_surname:
+                  type: string
+                  description: Primer apellido
+                last_surname:
+                  type: string
+                  description: Segundo apellido
+                gender:
+                  type: string
+                  description: |
+                    Genero
+                    - `M` Femenino
+                    - `H` Masculino
+                  enum:
+                    - M
+                    - F
+            examples:
+              CURP reverse sandbox:
+                value:
+                  state: DF
+                  birthdate: 04/03/1986
+                  name: Juan
+                  first_surname: Perez
+                  last_surname: Gonzalez
+                  gender: M
+      responses:
+        "200":
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CURPResponse"
+              example:
+                data:
+                  document_data:
+                    anioReg: "1988"
+                    claveEntidadRegistro: "25"
+                    claveMunicipioRegistro: "011"
+                    entidadRegistro: SINALOA
+                    foja: ""
+                    libro: "0001"
+                    municipioRegistro: GUASAVE
+                    numActa: "00064"
+                    tomo: ""
+                  pdf_url: /pdf/81116a034e539b523b746944b35875b8.pdf
+                  personal_data:
+                    claveEntidad: DF
+                    curp: ABCD880304HDFXNR45
+                    docProbatorio: 1
+                    entidad: DISTRITO FEDERAL
+                    fechaNacimiento: 04/03/1988
+                    nacionalidad: MEXICO
+                    nombres: MARTIN ALFONSO
+                    primerApellido: MEXIA
+                    segundoApellido: PONCE
+                    sexo: HOMBRE
+                    statusCurp: RCN
+                errors: null
+        "400":
+          $ref: "#/components/responses/InvalidOrMissingParameters"
+        "401":
+          $ref: "#/components/responses/MissingAPIKey"
+      security:
+        - APIKeyAuth: []
+  /migrations-pe/query:
+    post:
+      summary: Consultar Carné de Migraciones de Perú
+      tags:
+        - Migraciones Perú
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                document_type:
+                  type: string
+                  description: |
+                    Tipo de documento
+                    - `extranjeria` Carné de extranjeria
+                    - `ptp` Permiso temporal de permanencia
+                  enum:
+                    - extranjeria
+                    - ptp
+                document:
+                  type: string
+                  description: Numero de documento a consultar
+                birthdate:
+                  type: string
+                  description: "Fecha de nacimiento, formato DD/MM/YYYY"
+              required:
+                - document_type
+                - document
+                - birthdate
+            example:
+              curp: 15860162
+              birthdate: 23/07/1979
+            examples:
+              Migraciones  sandbox:
+                value:
+                  document_type: extranjeria
+                  document: 123456789
+                  birthdate: 26/11/1976
+      responses:
+        "200":
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MigrationsResponse"
+              example:
+                data:
+                  document_data:
+                    document_expiration: Tiene Residencia Indefinida
+                    last_document_issuance: 19/10/2019
+                    migratory_quality: ACUERDOS INTERNACIONALES - MERCOSUR
+                    residence_expiration: 19/10/2023
+                  personal_data:
+                    birthdate: 26/11/1976
+                    name: "DOE, JOHN"
+                    nationality: COLOMBIANA
+                errors: null
+        "400":
+          $ref: "#/components/responses/InvalidOrMissingParameters"
+        "401":
+          $ref: "#/components/responses/MissingAPIKey"
+      security:
+        - APIKeyAuth: []
+  /lost-document-co/query:
+    post:
+      summary: "Consulta si el documento de identificación se encuentra extraviado, consultando en la web de la Policía Nacional de Colombia (PNC)"
+      tags:
+        - PNC
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                criteria_search:
+                  type: string
+                  description: |
+                    Criterio por el que se buscará la constancia
+                    - `indentificacion` Número de identificación
+                    - `numero_radicado` Número de la constancia de pérdida de documento
+                  enum:
+                    - indentificacion
+                    - numero_radicado
+                number_search:
+                  type: string
+                  description: Número a buscar
+              required:
+                - criteria_search
+                - number_search
+            example:
+              criteria_search: indentificacion
+              number_search: 5846936581
+            examples:
+              Perdida doc sandbox:
+                value:
+                  criteria_search: indentificacion
+                  number_search: 5846936581
+      responses:
+        "200":
+          description: Respuesta exitosa de la consulta
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentLostResponse"
+              examples:
+                ConPerdidaDocumento:
+                  summary: Consulta exitosa con pérdida de documento
+                  value:
+                    data:
+                      lost: true
+                      date: 26/08/2021
+                      full_name: Jack Migger Fernandez
+                      document_type: Cedula de extranjeria
+                      document_number: "5846936581"
+                      consecutive_number: "584693658134923314"
+                      document_lost:
+                        document_type: Cedula de ciudadania / ID
+                        document_number: "5846936581"
+                      filename: 7fa03024a13141691c308907a36781fa.pdf
+                    errors: null
+                SinPerdidaDocumento:
+                  summary: Consulta exitosa sin pérdidad de documento
+                  value:
+                    data:
+                      lost: false
+                    errors: null
+                ErrorConsulta:
+                  summary: Error durante la ejecución de la consulta
+                  value:
+                    data: null
+                    errors:
+                      code: 801
+                      detail: The data of the loss of the identity document couldn't be obtained
+        "400":
+          description: Error en la consulta
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentLostResponse"
+              example:
+                data: null
+                errors:
+                  code: 400
+                  detail: criteria_search
+        "401":
+          $ref: "#/components/responses/MissingAPIKey"
+      security:
+        - APIKeyAuth: []

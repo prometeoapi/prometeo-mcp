@@ -1,0 +1,811 @@
+openapi: 3.1.0
+info:
+  title: DIAN API
+  description: Endpoints para la api de la DIAN
+  contact:
+    name: Prometeo
+    url: 'https://prometeoapi.com'
+    email: info@prometeoapi.com
+  version: '1.2'
+servers:
+  - url: 'https://fiscal.prometeoapi.net/'
+    variables: {}
+    description: Pre-Production and Production
+  - url: 'https://fiscal.sandbox.prometeoapi.com/'
+    variables: {}
+    description: Sandbox
+components:
+  schemas:
+    Date:
+      type: string
+      pattern: '\d\d/\d\d/\d{4}'
+      description: Fecha en formato DD/MM/YYYY
+    ErrorMessage:
+      type: object
+      properties:
+        status:
+          type: string
+          default: error
+        message:
+          type: string
+    CompanyInfo:
+      type: object
+      properties:
+        accountant:
+          type: object
+          description: Información sobre el contador
+        capital_composition:
+          type: object
+          description: Como está compuesta la empresa (campos 82 a 87)
+        reason:
+          type: string
+          description: Razón Social (campo 35)
+        pdf_url:
+          type: string
+          description: URI para extraer el PDF original
+        location:
+          type: object
+          description: Datos de como ubicar a la empresa (campos 38 a 45)
+        name:
+          type: string
+          description: Nombre de la empresa (campo 36)
+        constitution_date:
+          type: string
+          description: Fecha de constitución (campo 73)
+        representation:
+          type: array
+          description: Datos de los representantes
+          items:
+            type: object
+            properties:
+              document:
+                type: string
+                description: Numero de identificación (campo 101)
+              document_type:
+                type: string
+                description: Código numérico del tipo de documento (campo 100)
+              name:
+                type: string
+                description: Nombre del representante (campos 104 a 107)
+              representation_type:
+                type: string
+                description: Código numérico del tipo de representación (campo 98)
+              start_date:
+                type: string
+                description: Fecha inicio ejercicio representación (campo 99)
+        members:
+          type: array
+          description: 'Socios y/o Miembros de Juntas Directivas, Consorcios, Uniones Temporales'
+          items:
+            type: object
+            properties:
+              document:
+                type: string
+                description: Número de identificación (campo 112)
+              document_type:
+                type: string
+                description: Código numérico del tipo de identificación (campo 111)
+              name:
+                type: string
+                description: Nombre del miembro (campos 115 a 118)
+              nationality:
+                type: string
+                description: Nacionalidad (campo 114)
+              start_date:
+                type: string
+                description: Fecha de ingreso (campo 122)
+    Rent:
+      type: object
+      properties:
+        previous_form:
+          type: string
+        pdf_url:
+          type: string
+        reason:
+          type: string
+        correction_code:
+          type: string
+        year:
+          type: integer
+        form_number:
+          type: string
+        fields:
+          type: object
+        name:
+          type: object
+          properties:
+            first_name:
+              type: string
+            first_surname:
+              type: string
+            second_surname:
+              type: string
+            other_names:
+              type: string
+        economic_activity:
+          type: string
+        nit:
+          type: string
+        dv:
+          type: string
+        direction_code:
+          type: string
+    Vat:
+      type: object
+      properties:
+        pdf_url:
+          type: string
+        previous_form:
+          type: string
+        form_number:
+          type: string
+        year:
+          type: integer
+        correction_code:
+          type: string
+        direction_code:
+          type: string
+        nit:
+          type: string
+        dv:
+          type: string
+        reason:
+          type: string
+        fields:
+          type: object
+        name:
+          type: object
+          properties:
+            first_name:
+              type: string
+            first_surname:
+              type: string
+            second_surname:
+              type: string
+            other_names:
+              type: string
+        period:
+          type: string
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key necesaria para hacer llamadas
+      name: X-API-Key
+      in: header
+    SessionKeyAuth:
+      type: apiKey
+      description: Clave de sesión que identifica al usuario en el SAT
+      name: session_key
+      in: query
+  responses:
+    MissingAPIKey:
+      description: Falta API Key
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example: |
+            {
+              "status": "error",
+              "message": "Missing API key"
+            }
+    InvalidOrMissingParameters:
+      description: Parámetros inválidos o ausentes
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example: |
+            {
+              "status": "error",
+              "message": "Invalid parameters: date_end"
+            }
+    MissingCredentials:
+      description: Faltan credenciales
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorMessage'
+          example:
+            status: missing_credentials
+            missing_fields:
+              - password
+security:
+  - ApiKeyAuth: []
+    SessionKeyAuth: []
+paths:
+  /login/:
+    post:
+      summary: Login
+      tags:
+        - Autenticación
+      description: |
+        El login puede demorar hasta 20s en generar una respuesta. Depende de la carga que tenga la página de la Hacienda, el tiempo que puede demorar en devolver una respuesta.
+      security:
+        - APIKeyAuth: []
+      requestBody:
+        required: true
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              type: object
+              properties:
+                nit:
+                  type: string
+                  description: 'Número de nit, sin guiones (Solo requerido para empresas).'
+                document_type:
+                  type: string
+                  default: 13
+                  description: |
+                    Tipo de documento
+                    - `12` Tarjeta de identidad
+                    - `13` Cédula de ciudadanía
+                    - `14` Certificado Registraduría sin identificación
+                    - `21` Tarjeta de extranjería
+                    - `22` Cédula de extranjería
+                    - `41` Pasaporte
+                    - `42` Documento de identificación extranjero
+                    - `43` Sin identificación del exterior o para uso definido por DIAN
+                    - `44` Documento de Identificación extranjero Persona Jurídica
+                    - `46` Carné Diplomático
+                  enum:
+                    - 12
+                    - 13
+                    - 14
+                    - 21
+                    - 22
+                    - 41
+                    - 42
+                    - 43
+                    - 44
+                    - 46
+                document:
+                  type: string
+                  description: Identificador del usuario
+                password:
+                  type: string
+                  description: Contraseña de acceso
+              required:
+                - document
+                - password
+            examples:
+              Login NIT request:
+                value:
+                  nit: 900000000
+                  document_type: 13
+                  document: 20000000
+                  password: sandbox_password
+              Login request:
+                value:
+                  document_type: 13
+                  document: 10000000
+                  password: sandbox_password
+      responses:
+        '200':
+          description: Login exitoso
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  session_key:
+                    type: string
+                    description: |
+                      Es el identificador que se utilizará para el resto de tus consultas a la DIAN
+              examples:
+                Success:
+                  summary: Login exitoso
+                  value:
+                    status: logged_in
+                    key: 163d06b2-3378-4383-9868-71c2b6fb28da
+                MissingCredentials:
+                  summary: Faltan credenciales
+                  value:
+                    status: missing_credentials
+                    missing_fields:
+                      - password
+                WrongCredentials:
+                  summary: Credenciales incorrectas
+                  value:
+                    status: wrong_credentials
+        '400':
+          $ref: '#/components/responses/MissingCredentials'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+  /company-info/:
+    get:
+      summary: Información de la empresa
+      tags:
+        - Información tributaria de la empresa
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  info:
+                    $ref: '#/components/schemas/CompanyInfo'
+              example:
+                status: success
+                info:
+                  accountant:
+                    document: '123456'
+                    start_date: 01/05/2017
+                    name: ARMANDO BARREDA
+                    professional_card: 42972Z
+                  capital_composition:
+                    foreign_private: 0%
+                    foreign_public: 0%
+                    national: 100%
+                    national_private: 100%
+                    foreign: 0%
+                    national_public: 0%
+                  reason: Qualia Fintech SRL
+                  pdf_url: /pdf/9a001f5239673420c3f5335a96cfef4f.pdf
+                  location:
+                    country: Uruguay
+                    city: Montevideo
+                    phone1: '099030345'
+                    phone2: '0303456'
+                    department: Montevideo
+                    address: Calle falsa 12345
+                    email: info@qualia.uy
+                  name: Qualia Fintech SRL
+                  constitution_date: 15/08/2016
+                  representation:
+                    - document: '1015399852'
+                      document_type: '13'
+                      name:
+                        first_name: Paquita
+                        first_surname: Navajas
+                        other_names: ''
+                        second_surname: ''
+                      representation_type: '18'
+                      start_date: 10/04/2014
+                  members:
+                    - document: '479380'
+                      document_type: '13'
+                      name:
+                        first_name: John
+                        first_surname: Doe
+                        other_names: ''
+                        second_surname: ''
+                      nationality: COLOMBIA
+                      start_date: 10/04/2014
+                    - document: '16226853'
+                      document_type: '13'
+                      name:
+                        first_name: Jane
+                        first_surname: Doe
+                        other_names: ''
+                        second_surname: ''
+                      nationality: COLOMBIA
+                      start_date: 10/04/2014
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+  /balances/:
+    get:
+      summary: Balances
+      description: Corresponde al detalle de las obligaciones al día o en mora de la entidad.
+      tags:
+        - Información tributaria de la empresa
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    type: string
+                  balances:
+                    type: array
+                    description: Los balances de la empresa
+                    items:
+                      type: object
+                      properties:
+                        value:
+                          type: integer
+                        amount:
+                          type: number
+                        type:
+                          type: string
+              example:
+                status: success
+                balances:
+                  - value: 0
+                    amount: 26
+                    type: al dia
+                  - value: 47280000
+                    amount: 3
+                    type: saldo a favor
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+  /rent/:
+    parameters:
+      - in: query
+        name: year
+        schema:
+          type: integer
+          default: 2019
+        required: true
+    get:
+      summary: Formularios 110 y 210
+      description: Declaración de renta
+      tags:
+        - Declaraciones de impuestos
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  declaration:
+                    $ref: '#/components/schemas/Rent'
+              example:
+                status: success
+                declaration:
+                  previous_form: ''
+                  pdf_url: /pdf/6368901ff39e2a5ec239823343c575923.pdf
+                  reason: Qualia Fintech SRL
+                  correction_code: ''
+                  year: 2016
+                  form_number: '1112600018226'
+                  fields:
+                    '31':
+                      name: Aportes al sistema de seguridad social
+                      number: '31'
+                      value: 2278000
+                    '50':
+                      name: Otros costos
+                      value: 0
+                      number: '50'
+                    '79':
+                      name: Total retenciones año gravable
+                      number: '79'
+                      value: 0
+                    '80':
+                      name: Anticipo renta por el año gravable 2017
+                      number: '80'
+                      value: 0
+                    '85':
+                      value: 0
+                      number: '85'
+                      name: Saldo a pagar por impuesto
+                    '88':
+                      value: 0
+                      number: '88'
+                      name: o Total saldo a favor
+                  name:
+                    first_surname: ''
+                    first_name: ''
+                    second_surname: ''
+                    other_names: ''
+                  economic_activity: '2499'
+                  nit: '333222251'
+                  dv: '0'
+                  direction_code: 1 3
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+  /vat/:
+    parameters:
+      - in: query
+        name: year
+        description: Año
+        schema:
+          type: integer
+          default: 2018
+        required: true
+      - in: query
+        name: periodicity
+        description: |
+          Periodicidad, opciones:
+          - `q`: cuatrimestral
+          - `b`: bimestral
+        schema:
+          type: string
+          default: q
+          enum:
+            - q
+            - b
+        required: true
+      - in: query
+        name: period
+        description: |
+          En función de la periodicidad.
+
+          - Para cuatrimestral:
+            * `1`: Enero - Abril
+            * `2`: Mayo - Agosto
+            * `3`: Septiembre - Diciembre
+          - Para bimestral:
+            * `1`: Enero - Febrero
+            * `2`: Marzo - Abril
+            * `3`: Mayo - Junio
+            * `4`: Julio - Agosto
+            * `5`: Septiembre - Octubre
+            * `6`: Noviembre - Diciembre
+        schema:
+          type: integer
+          default: 2
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+            - 6
+        required: true
+    get:
+      summary: Formulario 300
+      description: Declaración de impuestos sobre las ventas - IVA
+      tags:
+        - Declaraciones de impuestos
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  declaration:
+                    $ref: '#/components/schemas/Vat'
+              example:
+                status: success
+                declaration:
+                  pdf_url: /pdf/8ff21e603a523l0a98c9cc8b0e9b3db1.pdf
+                  previous_form: ''
+                  form_number: '3013623041391'
+                  year: '2017'
+                  correction_code: ''
+                  direction_code: 1 1
+                  dv: '0'
+                  reason: Qualia Fintech SRL
+                  nit: '123332211'
+                  fields:
+                    '31':
+                      name: Por exportación de servicios
+                      number: '31'
+                      value: 0
+                    '32':
+                      name: Por ventas a sociedades de comercialización
+                      value: 0
+                      number: '32'
+                    '56':
+                      name: Total compras netas realizadas durante el
+                      value: 21530000
+                      number: '56'
+                    '66':
+                      number: '66'
+                      value: 0
+                      name: Por importaciones gravadas a tarifa del 5%
+                    '83':
+                      value: 0
+                      number: '83'
+                      name: Retenciones por IVA que le practicaron
+                    '88':
+                      name: Saldo a favor susceptible de devolución y/ocompensación por el presente período
+                      value: 0
+                      number: '88'
+                  period: '3'
+                  name:
+                    other_names: ''
+                    first_surname: ''
+                    second_surname: ''
+                    first_name: ''
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+  /numeration/:
+    parameters:
+      - in: query
+        name: type
+        schema:
+          type: string
+          default: authorization
+          enum:
+            - authorization
+            - habilitation
+            - inhabilitation
+        description: |
+          Tipo de solicitud, posibles valores:
+          - `authorization`: Autorización
+          - `habilitation`: Habilitación
+          - `inhabilitation`: Inhabilitación
+        required: true
+      - in: query
+        name: date_start
+        schema:
+          $ref: '#/components/schemas/Date'
+        description: Fecha de inicio del rango
+        required: true
+        allowReserved: true
+      - in: query
+        name: date_end
+        schema:
+          $ref: '#/components/schemas/Date'
+        description: Fecha del fin del rango
+        required: true
+        allowReserved: true
+    get:
+      summary: Numeracion de facturación
+      tags:
+        - Información tributaria de la empresa
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  numeration:
+                    type: object
+              example:
+                numeration:
+                  - address: CR 12 A 65
+                    country: Colombia
+                    department: Antioquia
+                    dv: '0'
+                    municipality: Medellín
+                    name:
+                      first_name: ''
+                      first_surname: ''
+                      other_names: ''
+                      second_surname: ''
+                    nit: '902202672'
+                    pdf_url: /pdf/25ebc593c917786864b9753cffa68b8f.pdf
+                    ranges:
+                      - establishment: Qualia SRL
+                        from: 1
+                        mode: COMPUTADOR
+                        prefix: ''
+                        to: 2000
+                        type: AUTORIZACIÓN
+                    reason: Qualia SRL
+                status: success
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []
+  /retentions/:
+    parameters:
+      - in: query
+        name: year
+        description: Año
+        schema:
+          type: integer
+          default: 2018
+        required: true
+      - in: query
+        name: period
+        description: |
+          Período
+            * `1`: Enero - Enero
+            * `2`: Febrero - Febrero
+            * `3`: Marzo - Marzo
+            * `4`: Abril - Abril
+            * `5`: Mayo - Mayo
+            * `6`: Junio - Junio
+            * `7`: Julio - Julio
+            * `8`: Agosto - Agosto
+            * `9`: Septiembre - Septiembre
+            * `10`: Octubre - Octubre
+            * `11`: Noviembre - Noviembre
+            * `12`: Diciembre - Diciembre
+        schema:
+          type: integer
+          default: 1
+          enum:
+            - 1
+            - 2
+            - 3
+            - 4
+            - 5
+            - 6
+            - 7
+            - 8
+            - 9
+            - 10
+            - 11
+            - 12
+        required: true
+    get:
+      summary: Retenciones en la Fuente
+      tags:
+        - Declaraciones de impuestos
+      responses:
+        '200':
+          description: Respuesta exitosa
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  direction_code:
+                    type: string
+                  fields:
+                    type: object
+              examples:
+                Success:
+                  summary: Respuesta exitosa
+                  value:
+                    retentions:
+                      direction_code: 3 2
+                      fields:
+                        '27':
+                          name: Rentas de trabajo
+                          number: 27
+                          value: 15972000
+                        '28':
+                          name: Rentas de pensiones
+                          number: 28
+                          value: 0
+                        '29':
+                          name: Honorarios
+                          number: 29
+                          value: 4200000
+                        '30':
+                          name: Comisiones
+                          number: 30
+                          value: 0
+                        '83':
+                          name: 'Más: Sanciones'
+                          number: 83
+                          value: 0
+                        '84':
+                          name: Total retenciones más sanciones
+                          number: 84
+                          value: 1668000
+                      form_number: '3501661737131'
+                      nit: '80172487'
+                      pdf_url: /pdf/f9ac62308e8595b1cd2a5756c1c8ce75.pdf
+                      period: 0
+                      reason: Qualia Fintech SRL
+                      year: 2017
+                    status: success
+                NoDocument:
+                  summary: No existe el documento en el período seleccionado
+                  value:
+                    message: 'El sistema no ha encontrado documentos a su nombre o a nombre de la Organización que representa, correspondientes al año gravable, período y periodicidad diligenciados, regrese e intente nuevos parámetros de consulta.'
+                    status: error
+        '400':
+          $ref: '#/components/responses/InvalidOrMissingParameters'
+        '401':
+          $ref: '#/components/responses/MissingAPIKey'
+      security:
+        - APIKeyAuth: []
+          SessionKeyAuth: []

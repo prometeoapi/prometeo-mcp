@@ -1,0 +1,3030 @@
+openapi: "3.0.0"
+info:
+  title: "Crossborder API"
+  description: "Crossborder API"
+  version: "1.0" # 1.0.4
+  contact:
+    name: "eveiga@prometeoapi.com"
+servers:
+  - url: "https://crossborder.secure.prometeoapi.net/v1"
+    description: "PROD (MTLS)"
+  - url: "https://crossborder.secure.beta.prometeoapi.com/v1"
+    description: "BETA (MTLS)"
+  - url: "https://crossborder-api.sandbox.prometeoapi.com"
+    description: "SANDBOX"
+tags:
+  - name: "payin"
+    description: "payin"
+  - name: "payout"
+    description: "PayOut"
+  - name: "customer"
+    description: "Customer"
+  - name: "account"
+    description: "account"
+  - name: "fx"
+    description: "Forex"
+  - name: "notifications"
+    description: "Webhook Notifications"
+
+security:
+  - APIKeyAuth: []
+
+paths:
+  "/payin/intent":
+    post:
+      summary: "Create payment intent"
+      operationId: createPaymentIntent
+      tags:
+        - payin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/IntentDataRequest"
+            examples:
+              Without Customer Id:
+                value:
+                  destination_id: "0daf107a-2aa2-4661-a0ea-e7cf4ad2730c"
+                  concept: "PROM123452 REF45424322"
+                  currency: "MXN"
+                  amount: "1.00"
+                  customer:
+                    name: Jane Doe
+                    tax_id_type: rfc
+                    tax_id: DODJ2301016J3
+                    external_id: "bf5d88cc-f60c-4612-8739-15b3244fcd04"
+              With Customer Id:
+                value:
+                  destination_id: "0daf107a-2aa2-4661-a0ea-e7cf4ad2730c"
+                  concept: "PROM123452 REF45424322"
+                  currency: "MXN"
+                  amount: "1.00"
+                  customer: "0d1237a-2aa2-4661-a0ea-e7cf4ad21231"
+      responses:
+        "201":
+          description: Intent Created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntentDataResponse"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+                InvalidAccountFormat:
+                  summary: Invalid account format
+                  value:
+                    code: "X2004"
+                    type: "invalid_account_type"
+                    message: "The submitted account number format is invalid"
+                    status: "error"
+                InvalidTaxIdFormat:
+                  summary: Invalid tax ID format
+                  value:
+                    code: "X2003"
+                    type: "invalid_tax_id_format"
+                    message: "The submitted tax ID format is not supported"
+                    status: "error"
+                InvalidAmount:
+                  summary: Invalid amount
+                  value:
+                    code: "X2006"
+                    type: "invalid_amount"
+                    message: "Invalid amount"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+    get:
+      summary: "List payment intents"
+      operationId: listPaymentIntents
+      tags:
+        - payin
+      responses:
+        "200":
+          description: Success response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/IntentData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/payin/intent/{id}":
+    get:
+      summary: "Get payment intent detail"
+      operationId: getPaymentIntent
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Intent id
+      tags:
+        - payin
+      responses:
+        "200":
+          description: Success response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/IntentData"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/payin/refund":
+    post:
+      summary: "Create a refund"
+      operationId: createRefund
+      tags:
+        - payin
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - intent_id
+                - external_id
+              properties:
+                intent_id:
+                  type: string
+                external_id:
+                  type: string
+                  description: "An external ID to identify a user. It can be the merchant's user ID or other tracking ID."
+                  example: "SOME_PREFIX:SOME_UNIQUE_ID"
+                amount:
+                  $ref: "#/components/schemas/Decimal"
+      responses:
+        "201":
+          description: Refund created (Payout Id returned)
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutTransfer"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+                InvalidAccountFormat:
+                  summary: Invalid account format
+                  value:
+                    code: "X2004"
+                    type: "invalid_account_type"
+                    message: "The submitted account number format is invalid"
+                    status: "error"
+                InvalidTaxIdFormat:
+                  summary: Invalid tax ID format
+                  value:
+                    code: "X2003"
+                    type: "invalid_tax_id_format"
+                    message: "The submitted tax ID format is not supported"
+                    status: "error"
+                InvalidAmount:
+                  summary: Invalid amount
+                  value:
+                    code: "X2006"
+                    type: "invalid_amount"
+                    message: "Invalid amount"
+                    status: "error"
+                PaymentAlreadyRefunded:
+                  summary: The payment has already been refunded
+                  value:
+                    code: "X2010"
+                    type: "payment_already_refunded"
+                    message: "Payment has already been refunded"
+                    status: "error"
+                InsufficientAmount:
+                  summary: The current account balance is insufficient
+                  value:
+                    code: "X2011"
+                    type: "insufficient_amount"
+                    message: "Insufficient amount for the transaction"
+                    status: "error"
+                PaymentAmountExceedsOriginal:
+                  summary: The payment amount exceeds the original transaction amount
+                  value:
+                    code: "X2012"
+                    type: "payment_amount_exceeds_original"
+                    message: "Payment amount exceeds the originally intended amount"
+                    status: "error"
+                PaymentCannotBeRefunded:
+                  summary: The payment intent cannot be refunded in the current state
+                  value:
+                    code: "X2013"
+                    type: "payment_cannot_be_refunded"
+                    message: "Payment intent cannot be refunded in the specified state"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/payout/transfer":
+    post:
+      summary: "Create individual payout"
+      operationId: createPayout
+      tags:
+        - payout
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePayoutTransferRequest"
+            examples:
+              With Customer Id:
+                value:
+                  description: Test Payout
+                  external_id: e5af7e6e-98f4-4e43-af7e-6e98f42e43ef
+                  origin: f3676011-5203-43db-a760-115203e3db5e
+                  amount: 2507.95
+                  fee: 1.05
+                  customer: 0f4b1587-7708-4b1a-8b15-877708db1a2c
+              Without Customer Id:
+                value:
+                  description: Test Payout
+                  external_id: e5af7e6e-98f4-4e43-af7e-6e98f42e43ef
+                  origin: f3676011-5203-43db-a760-115203e3db5e
+                  amount: 2507.95
+                  fee: 1.05
+                  customer:
+                    name: Jane Doe
+                    tax_id_type: rfc
+                    tax_id: DODJ2301016J3
+                    external_id: "bf5d88cc-f60c-4612-8739-15b3244fcd04"
+                    withdrawal_account:
+                      account_number: 012180826854179156
+                      currency: MXN
+      responses:
+        "201":
+          description: Payout created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutTransferInput"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+                InvalidAccountFormat:
+                  summary: Invalid account format
+                  value:
+                    code: "X2004"
+                    type: "invalid_account_type"
+                    message: "The submitted account number format is invalid"
+                    status: "error"
+                InvalidTaxIdFormat:
+                  summary: Invalid tax ID format
+                  value:
+                    code: "X2003"
+                    type: "invalid_tax_id_format"
+                    message: "The submitted tax ID format is not supported"
+                    status: "error"
+                InvalidAmount:
+                  summary: Invalid amount
+                  value:
+                    code: "X2006"
+                    type: "invalid_amount"
+                    message: "Invalid amount"
+                    status: "error"
+                InsufficientAmount:
+                  summary: The current account balance is insufficient
+                  value:
+                    code: "X2011"
+                    type: "insufficient_amount"
+                    message: "Insufficient amount for the transaction"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+    get:
+      summary: "List payout"
+      operationId: listpayout
+      tags:
+        - payout
+      parameters:
+        - in: query
+          name: external_id
+          schema:
+            type: string
+            maxLength: 50
+          required: false
+          description: The external id of the payout equal to
+          example: e5af7e6e-98f4-4e43-af7e-6e98f42e43ef
+        - in: query
+          name: external_provider_id
+          schema:
+            type: string
+            maxLength: 50
+          required: false
+          description: The external provider id of the payout equal to
+          example: 0d8ae9f6-327e-4d36-8ae9-f6327ead362d
+        - in: query
+          name: timestamp
+          schema:
+            type: string
+            format: date-time
+          required: false
+          description: The timestamp of the payout equal to
+          example: 2024-09-30T18:00:58.087031Z
+        - in: query
+          name: timestamp_from
+          schema:
+            type: string
+            format: date-time
+          required: false
+          description: The timestamp of the payout greater than or equal to
+          example: 2024-09-30T18:00:58.087031Z
+        - in: query
+          name: timestamp_to
+          schema:
+            type: string
+            format: date-time
+          required: false
+          description: The timestamp of the payout less than or equal to
+          example: 2024-09-30T18:00:58.087031Z
+        - in: query
+          name: amount
+          schema:
+            $ref: "#/components/schemas/Decimal"
+          required: false
+          description: The amount of the payout equal to
+          example: 2507.95
+        - in: query
+          name: amount_min
+          schema:
+            $ref: "#/components/schemas/Decimal"
+          required: false
+          description: The amount of the payout greater than or equal to
+          example: 2507.95
+        - in: query
+          name: amount_max
+          schema:
+            $ref: "#/components/schemas/Decimal"
+          required: false
+          description: The amount of the payout less than or equal to
+          example: 2507.95
+        - in: query
+          name: state
+          schema:
+            $ref: "#/components/schemas/PayoutStatesEnum"
+          required: false
+          description: The current state of the payout equal to
+          example: created
+        - in: query
+          name: currency
+          schema:
+            $ref: "#/components/schemas/Currency"
+          required: false
+          description: The currency of the payout equal to
+          example: MXN
+        - in: query
+          name: origin_financial_institution
+          schema:
+            type: string
+            maxLength: 16
+          required: false
+          description: The origin financial institution code of the payout equal to
+          example: stp
+        - in: query
+          name: origin_account
+          schema:
+            type: string
+            maxLength: 36
+            pattern: "[0-9]{8,36}$"
+          required: false
+          description: The origin account number of the payout equal to
+          example: 646180963104875047
+        - in: query
+          name: customer_account
+          schema:
+            type: string
+            maxLength: 16
+            pattern: "[0-9]{8,36}$"
+          required: false
+          description: The customer account number of the payout equal to
+          example: 12180826854179156
+        - in: query
+          name: name
+          schema:
+            type: string
+            maxLength: 50
+          required: false
+          description: The customer name of the payout equal to
+          example: Jane Doe
+        - in: query
+          name: customer_tax_id
+          schema:
+            type: string
+            maxLength: 30
+          required: false
+          description: The customer tax id of the payout equal to
+          example: DODJ2301016J3
+        - in: query
+          name: ordering
+          schema:
+            type: string
+            enum:
+              - timestamp
+              - amount
+              - fee
+          required: false
+          description: Order by
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: false
+          description: Page
+      responses:
+        "200":
+          description: Payout listed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: The number of payout listed
+                    example: 123
+                  next:
+                    type: string
+                    format: uri
+                    description: The next page of listed payout
+                    example: http://api.example.org/payout/transfer/?page=4
+                  previous:
+                    type: string
+                    format: uri
+                    description: The previous page of listed payout
+                    example: http://api.example.org/payout/transfer/?page=2
+                  results:
+                    description: The list of payout
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/PayoutTransfer"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+                InvalidAccountFormat:
+                  summary: Invalid account format
+                  value:
+                    code: "X2004"
+                    type: "invalid_account_type"
+                    message: "The submitted account number format is invalid"
+                    status: "error"
+                InvalidTaxIdFormat:
+                  summary: Invalid tax ID format
+                  value:
+                    code: "X2003"
+                    type: "invalid_tax_id_format"
+                    message: "The submitted tax ID format is not supported"
+                    status: "error"
+                InvalidAmount:
+                  summary: Invalid amount
+                  value:
+                    code: "X2006"
+                    type: "invalid_amount"
+                    message: "Invalid amount"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/payout/transfer/{id}":
+    get:
+      summary: "Get payout detail"
+      operationId: getPayout
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Payout id
+          example: 4d6c83e6-44ce-4963-ac83-e644ced9631c
+      tags:
+        - payout
+      responses:
+        "200":
+          description: Payout details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutTransfer"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/customer":
+    post:
+      summary: "Create customer"
+      operationId: createcustomer
+      tags:
+        - customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InputCustomer"
+      responses:
+        "200":
+          description: Create customer successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+                InvalidAccountFormat:
+                  summary: Invalid account format
+                  value:
+                    code: "X2004"
+                    type: "invalid_account_type"
+                    message: "The submitted account number format is invalid"
+                    status: "error"
+                InvalidTaxIdFormat:
+                  summary: Invalid tax ID format
+                  value:
+                    code: "X2003"
+                    type: "invalid_tax_id_format"
+                    message: "The submitted tax ID format is not supported"
+                    status: "error"
+                AccountDataNotMatch:
+                  summary: Withdrawal Account data does not match the provided owner
+                  value:
+                    code: "X2014"
+                    type: "account_data_not_match"
+                    message: "Account data does not match the provided customer data. Reason: {...}"
+                    status: "error"
+                InvalidAccount:
+                  summary: Withdrawal Account is not open or available to receive funds.
+                  value:
+                    code: "X2015"
+                    type: "invalid_account"
+                    message: "Invalid account. Reason: {...}"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+    get:
+      summary: "List the customers"
+      operationId: listBeneficiaries
+      tags:
+        - customer
+      parameters:
+        - in: query
+          name: country
+          schema:
+            $ref: "#/components/schemas/Country"
+          required: false
+          description: The country of the customer
+          example: "MX"
+        - in: query
+          name: tax_id
+          schema:
+            type: string
+            maxLength: 30
+          required: false
+          description: The tax ID of the customer
+          example: "DODJ2301016J3"
+        - in: query
+          name: account_number
+          schema:
+            type: string
+            maxLength: 36
+          required: false
+          description: The account number of the customer
+          example: "012856302547450692"
+        - in: query
+          name: external_id
+          schema:
+            type: string
+            maxLength: 50
+          required: false
+          description: The external ID of the customer
+          example: "SOME_PREFIX:SOME_UNIQUE_ID"
+      responses:
+        "200":
+          description: Customer listed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: The number of customers listed
+                    example: 123
+                  next:
+                    type: string
+                    format: uri
+                    description: The next page of listed customers
+                    example: http://api.example.org/payout/customer/?page=4
+                  previous:
+                    type: string
+                    format: uri
+                    description: The previous page of listed customers
+                    example: http://api.example.org/payout/customer/?page=2
+                  results:
+                    description: The list of customers
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/customer/{id}":
+    get:
+      summary: Get Customer Detail
+      operationId: getCustomerDetail
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Customer id
+          example: f3676011-5203-43db-a760-115203e3db5e
+      tags:
+        - customer
+      responses:
+        "200":
+          description: Customer detail retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+    patch:
+      summary: Update customer
+      operationId: updatecustomer
+      tags:
+        - customer
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: customer id
+          example: 9c1dd10e-7c19-470d-9dd1-0e7c19670d64
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InputCustomer"
+      responses:
+        "200":
+          description: customer details updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/customer/{id}/withdrawal_account/":
+    post:
+      summary: Add Withdrawal account for customer
+      operationId: addWithdrawalAccountCustomer
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Customer id
+          example: f3676011-5203-43db-a760-115203e3db5e
+      tags:
+        - customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawalAccountDetailsRequest"
+      responses:
+        "200":
+          description: Withdrawal account Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+                InvalidAccountFormat:
+                  summary: Invalid account format
+                  value:
+                    code: "X2004"
+                    type: "invalid_account_type"
+                    message: "The submitted account number format is invalid"
+                    status: "error"
+                AccountDataNotMatch:
+                  summary: Withdrawal Account data does not match the provided owner
+                  value:
+                    code: "X2014"
+                    type: "account_data_not_match"
+                    message: "Account data does not match the provided customer data. Reason: {...}"
+                    status: "error"
+                InvalidAccount:
+                  summary: Withdrawal Account is not open or available to receive funds.
+                  value:
+                    code: "X2015"
+                    type: "invalid_account"
+                    message: "Invalid account. Reason: {...}"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/customer/{id}/withdrawal_account/{account_id}":
+    patch:
+      summary: Update Withdrawal account for customer
+      operationId: updateWithdrawalAccountCustomer
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Customer id
+          example: f3676011-5203-43db-a760-115203e3db5e
+        - in: path
+          name: account_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Withdrawal Account id
+          example: d94b807f-e0dd-4dca-ba2f-0606b29d8ad7
+      tags:
+        - customer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WithdrawalAccountDetailsRequest"
+      responses:
+        "200":
+          description: Withdrawal account Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerResponse"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+                InvalidAccountFormat:
+                  summary: Invalid account format
+                  value:
+                    code: "X2004"
+                    type: "invalid_account_type"
+                    message: "The submitted account number format is invalid"
+                    status: "error"
+                AccountDataNotMatch:
+                  summary: Withdrawal Account data does not match the provided owner
+                  value:
+                    code: "X2014"
+                    type: "account_data_not_match"
+                    message: "Account data does not match the provided customer data. Reason: {...}"
+                    status: "error"
+                InvalidAccount:
+                  summary: Withdrawal Account is not open or available to receive funds.
+                  value:
+                    code: "X2015"
+                    type: "invalid_account"
+                    message: "Invalid account. Reason: {...}"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/customer/{id}/withdrawal_account/{account_id}/select":
+    post:
+      summary: Select Withdrawal account for customer
+      operationId: selectWithdrawalAccountCustomer
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Customer id
+          example: f3676011-5203-43db-a760-115203e3db5e
+        - in: path
+          name: account_id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Withdrawal Account id
+          example: d94b807f-e0dd-4dca-ba2f-0606b29d8ad7
+      tags:
+        - customer
+      responses:
+        "200":
+          description: Withdrawal account Added
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WithdrawalAccountDetailsResponse"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/account/{id}":
+    get:
+      summary: "Get account details"
+      operationId: accountDetails
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Account id
+          example: f3676011-5203-43db-a760-115203e3db5e
+      tags:
+        - account
+      responses:
+        "200":
+          description: Account detail success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/account":
+    get:
+      summary: "List account"
+      operationId: listaccount
+      tags:
+        - account
+      parameters:
+        - in: query
+          name: local_account_number
+          schema:
+            type: string
+            maxLength: 36
+          required: false
+          description: The local account number
+          example: "012856302547450692"
+        - in: query
+          name: country
+          schema:
+            $ref: "#/components/schemas/Country"
+          required: false
+          description: The account country location
+          example: "MX"
+        - in: query
+          name: currency
+          schema:
+            $ref: "#/components/schemas/Currency"
+          required: false
+          description: The account currency
+          example: "MXN"
+      responses:
+        "200":
+          description: Success listed account
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Account"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/account/{id}/transactions":
+    get:
+      summary: "List account transactions"
+      operationId: listTransactions
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+          description: Account id
+        - in: query
+          name: origin_account
+          schema:
+            type: string
+            maxLength: 50
+          required: false
+          description: Origin account
+          example: "646720602500000105"
+        - in: query
+          name: destination_account
+          schema:
+            type: string
+            maxLength: 50
+          required: false
+          description: Destination account
+          example: "12180826854179156"
+      tags:
+        - account
+      responses:
+        "200":
+          description: Success listed transactions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  count:
+                    type: integer
+                    description: The number of payout listed
+                    example: 123
+                  next:
+                    type: string
+                    format: uri
+                    description: The next page of listed payout
+                    example: http://api.example.org/account/ae186b2c-065d-4f4b-993f-d510015eafb3/transactions?page=4
+                  previous:
+                    type: string
+                    format: uri
+                    description: The previous page of listed payout
+                    example: http://api.example.org/account/ae186b2c-065d-4f4b-993f-d510015eafb3/transactions?page=2
+                  results:
+                    description: The list of transactions
+                    type: array
+                    items:
+                      $ref: "#/components/schemas/Transaction"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+  "/account/transfer (SOON)":
+    post:
+      summary: "Transfer funds between own accounts"
+      operationId: transferFunds
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                debit_account:
+                  type: string
+                credit_account:
+                  type: string
+                amount:
+                  $ref: "#/components/schemas/Decimal"
+                currency:
+                  $ref: "#/components/schemas/Currency"
+      responses:
+        "200":
+          description: Transfer executed successfully
+      tags:
+        - account
+  "/fx/quote (SOON)":
+    get:
+      summary: "Get fx quote"
+      operationId: getFxQuote
+      parameters:
+        - in: query
+          name: currencyPair
+          required: true
+          description: Currency pair to quote
+          schema:
+            type: string
+            example: "USDBRL"
+      responses:
+        "200":
+          description: "Success response"
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  value:
+                    type: string
+                    example: "12.30"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+      tags:
+        - fx
+  "/fx/exchange (SOON)":
+    post:
+      summary: "Buy or sell certain amount with currency pair"
+      operationId: exchangeCurrencyFx
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ExchangeCurrencyRequest"
+      responses:
+        "201":
+          description: "Order created"
+        "400":
+          description: Bad Request - Invalid input or malformed data
+          content:
+            application/json:
+              examples:
+                ValidationException:
+                  summary: Validation error
+                  value:
+                    code: "X1001"
+                    type: "validation_error"
+                    message: "Invalid input provided"
+                    status: "error"
+                    description:
+                      - field_name: "field"
+                        error_detail: ["Error message description"]
+                ParseException:
+                  summary: Parse error
+                  value:
+                    code: "X1002"
+                    type: "parse_error"
+                    message: "Malformed data detected"
+                    status: "error"
+                InvalidAmount:
+                  summary: Invalid amount
+                  value:
+                    code: "X2006"
+                    type: "invalid_amount"
+                    message: "Invalid amount"
+                    status: "error"
+                InsufficientAmount:
+                  summary: The current account balance is insufficient
+                  value:
+                    code: "X2011"
+                    type: "insufficient_amount"
+                    message: "Insufficient amount for the transaction"
+                    status: "error"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/PermissionException"
+        "404":
+          $ref: "#/components/responses/NotFoundException"
+        "405":
+          $ref: "#/components/responses/MethodNotAllowedException"
+        "406":
+          $ref: "#/components/responses/NotAcceptableException"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaTypeException"
+        "429":
+          $ref: "#/components/responses/ThrottledException"
+        "500":
+          $ref: "#/components/responses/CrossBorderAPIException"
+      tags:
+        - fx
+  "/merchant_url/webhook":
+    post:
+      summary: Send event webhook
+      operationId: sendWebhookEvent
+      requestBody:
+        $ref: "#/components/requestBodies/WebhookEvent"
+      responses:
+        "200":
+          description: Webhook received successfully
+      tags:
+        - notifications
+components:
+  securitySchemes:
+    APIKeyAuth:
+      type: apiKey
+      description: API Key required to make calls
+      name: X-API-Key
+      in: header
+  schemas:
+    IntentData:
+      type: object
+      properties:
+        external_id:
+          type: string
+          description: "An external ID to identify a user. It can be the merchant's user ID or other tracking ID."
+          example: "SOME_PREFIX:SOME_UNIQUE_ID"
+        concept:
+          type: string
+          description: "Concept associated with the payment intent. This text will be reflected as a concept in the bank issuing the payment."
+          example: "Some concept"
+        currency:
+          $ref: "#/components/schemas/Currency"
+        amount:
+          $ref: "#/components/schemas/Decimal"
+        reference:
+          type: string
+          description: "Internal reference associated with the payment."
+          example: "XBVTIQ3CQNN1ETFPG79TCC5IYA"
+        customer:
+          $ref: "#/components/schemas/PayinCustomer"
+        destination:
+          $ref: "#/components/schemas/AccountDetails"
+        events:
+          type: array
+          description: The events of the payin
+          items:
+            $ref: "#/components/schemas/PayinTransferState"
+          example:
+            - state: created
+              timestamp: 2024-09-30T18:00:58.087031Z
+              message: "payin created"
+    IntentDataRequest:
+      type: object
+      required:
+        - destination_id
+        - currency
+        - amount
+        - customer
+      properties:
+        destination_id:
+          type: string
+          format: uuid
+          description: "Merchant Account ID"
+          example: f3676011-5203-43db-a760-115203e3db5e
+        concept:
+          type: string
+          description: "Concept associated with the payment intent. This text will be reflected as a concept in the bank issuing the payment."
+          example: "Some concept"
+        currency:
+          "$ref": "#/components/schemas/Currency"
+        amount:
+          "$ref": "#/components/schemas/Decimal"
+        customer:
+          oneOf:
+            - "$ref": "#/components/schemas/Customer"
+            - type: string
+              format: uuid
+              description: customer Id
+              example: 0f4b1587-7708-4b1a-8b15-877708db1a2c
+    IntentDataResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: "Identifies a payin intent"
+        customer:
+          $ref: "#/components/schemas/PayinCustomer"
+      required:
+        - id
+        - customer
+    Transaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: a7fb4503-2b75-4ac3-9348-5cc626942626
+        amount:
+          $ref: "#/components/schemas/Decimal"
+          example: 1.55
+        timestamp:
+          type: string
+          format: date-time
+          example: 2025-04-04T00:00:00Z
+        detail:
+          type: string
+          example: "646010502400000002"
+        type:
+          type: string
+          example: "TransactionType.ACH_PAYMENT"
+        reference:
+          type: string
+          example: "XBDEV8G3UIRE22FXKS7F7K1WKBPN7S"
+        state:
+          type: string
+          example: "TransactionState.COMPLETED"
+        origin:
+          type: object
+          properties:
+            account_details:
+              type: object
+              properties:
+                format:
+                  type: string
+                  example: "CLABE"
+                number:
+                  type: string
+                  example: "646010502400000002"
+            tax_information:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: "RFC"
+                tax_id:
+                  type: string
+                  example: "PRO221220DU3"
+            beneficiary_name:
+              type: string
+              nullable: true
+        destination:
+          type: object
+          properties:
+            account_details:
+              type: object
+              properties:
+                format:
+                  type: string
+                  example: "CLABE"
+                number:
+                  type: string
+                  example: "012420001083122815"
+            tax_information:
+              type: object
+              properties:
+                type:
+                  type: string
+                  example: "RFC"
+                tax_id:
+                  type: string
+                  example: "GABC890413RY5"
+            beneficiary_name:
+              type: string
+              nullable: true
+    CreatePayoutTransferRequest:
+      type: object
+      properties:
+        description:
+          type: string
+          maxLength: 100
+          example: "Test Payout"
+        external_id:
+          type: string
+          maxLength: 50
+          description: Id used to track the payout
+          example: e5af7e6e-98f4-4e43-af7e-6e98f42e43ef
+        origin:
+          type: string
+          format: uuid
+          description: The origin account Id
+          example: f3676011-5203-43db-a760-115203e3db5e
+        amount:
+          $ref: "#/components/schemas/Decimal"
+          example: 2507.95
+        fee:
+          $ref: "#/components/schemas/Decimal"
+          example: 1.05
+        customer:
+          oneOf:
+            - $ref: "#/components/schemas/InputCustomer"
+            - type: string
+              format: uuid
+              description: customer Id
+              example: 0f4b1587-7708-4b1a-8b15-877708db1a2c
+    InputCustomer:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: The customer name
+          example: Jane Doe
+        tax_id_type:
+          type: string
+          description: The type of tax identification of the customer
+          enum:
+            - rfc
+            - cnpj
+            - ruc
+          example: rfc
+        tax_id:
+          type: string
+          description: The customer's tax identification number
+          example: DODJ2301016J3
+        external_id:
+          type: string
+          description: "An external ID to identify a user. It can be the merchant's user ID or other tracking ID."
+          example: "SOME_PREFIX:SOME_UNIQUE_ID"
+        withdrawal_account:
+          "$ref": "#/components/schemas/CustomerAccountDetails"
+      required:
+        - external_id
+    PayoutCustomer:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: The customer name
+          example: Jane Doe
+        tax_id_type:
+          type: string
+          description: The type of tax identification of the customer
+          enum:
+            - rfc
+            - cnpj
+            - ruc
+          example: rfc
+        tax_id:
+          type: string
+          pattern: "[0-9A-Z]{10,30}$"
+          description: The customer's tax identification number
+          example: DODJ2301016J3
+        external_id:
+          type: string
+          description: "An external ID to identify a user. It can be the merchant's user ID or other tracking ID."
+          example: "SOME_PREFIX:SOME_UNIQUE_ID"
+        withdrawal_account:
+          $ref: "#/components/schemas/WithdrawalAccountDetailsResponse"
+      required:
+        - external_id
+    PayinCustomer:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: The customer name
+          example: Jane Doe
+        tax_id_type:
+          type: string
+          description: The type of tax identification of the customer
+          enum:
+            - rfc
+            - cnpj
+            - ruc
+          example: rfc
+        tax_id:
+          type: string
+          pattern: "[0-9A-Z]{10,30}$"
+          description: The customer's tax identification number
+          example: DODJ2301016J3
+        external_id:
+          type: string
+          description: "An external ID to identify a user. It can be the merchant's user ID or other tracking ID."
+          example: "SOME_PREFIX:SOME_UNIQUE_ID"
+        virtual_account:
+          $ref: "#/components/schemas/VirtualAccountDetails"
+      required:
+        - external_id
+    Customer:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 50
+          description: The customer name
+          x-faker: name.firstName name.LastName
+          example: Jane Doe
+        tax_id_type:
+          type: string
+          description: The type of tax identification of the customer
+          enum:
+            - rfc
+            - cnpj
+            - ruc
+          example: rfc
+        tax_id:
+          type: string
+          pattern: "[0-9A-Z]{10,30}$"
+          description: The customer's tax identification number
+          example: DODJ2301016J3
+        external_id:
+          type: string
+          description: "An external ID to identify a user. It can be the merchant's user ID or other tracking ID."
+          example: "SOME_PREFIX:SOME_UNIQUE_ID"
+        withdrawal_accounts:
+          type: array
+          description: The withdrawal accounts of the customer
+          items:
+            $ref: "#/components/schemas/WithdrawalAccountDetailsResponse"
+        virtual_accounts:
+          type: array
+          description: The virtual accounts assigned for the customer
+          items:
+            $ref: "#/components/schemas/VirtualAccountDetails"
+      required:
+        - external_id
+    Bank:
+      type: object
+      properties:
+        code:
+          type: string
+          pattern: "[0-9]{3}$"
+          description: The bank code number
+          example: "012"
+        bicfi:
+          type: string
+          pattern: "^[0-9A-Z]{8}([0-9A-Z]{3})?$"
+          description: The bank BICFI code
+          example: BBVAMXMMXXX
+        name:
+          type: string
+          maxLength: 50
+          description: The bank name
+          example: BBVA
+        country:
+          $ref: "#/components/schemas/Country"
+          description: The bank county
+          example: MX
+    CustomerResponse:
+      allOf:
+        - $ref: "#/components/schemas/Customer"
+        - type: object
+          required:
+            - id
+          properties:
+            id:
+              type: string
+              format: uuid
+              example: 9c1dd10e-7c19-470d-9dd1-0e7c19670d64
+    PayinStatesEnum:
+      type: string
+      maxLength: 50
+      enum:
+        - created
+        - pending
+        - rejected
+        - settled
+        - refunded
+        - cancelled
+    PayinTransferState:
+      type: object
+      properties:
+        state:
+          $ref: "#/components/schemas/PayinStatesEnum"
+          description: The state name
+          example: created
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp of the payin event
+          example: 2024-09-30T18:00:58.087031Z
+        message:
+          type: string
+          description: The message of the event, if exists
+          example: "Some message"
+    PayoutStatesEnum:
+      type: string
+      maxLength: 50
+      enum:
+        - created
+        - initiated
+        - pending
+        - failed
+        - settled
+        - cancelled
+    PayoutTransferState:
+      type: object
+      properties:
+        state:
+          $ref: "#/components/schemas/PayoutStatesEnum"
+          description: The state name
+          example: created
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp of the payout event
+          example: 2024-09-30T18:00:58.087031Z
+        message:
+          type: string
+          description: The message of the event, if exists
+          example: "Some message"
+    PayoutTransfer:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 4d6c83e6-44ce-4963-ac83-e644ced9631c
+        origin:
+          type: string
+          format: uuid
+          description: The origin account Id
+          example: f3676011-5203-43db-a760-115203e3db5e
+        description:
+          type: string
+          maxLength: 100
+          example: "Test Payout"
+        external_id:
+          type: string
+          maxLength: 50
+          description: Id used to track the payout
+          example: e5af7e6e-98f4-4e43-af7e-6e98f42e43ef
+        timestamp:
+          type: string
+          format: date-time
+          description: The timestamp of the payout creation
+          example: 2024-09-30T18:00:58.087031Z
+        amount:
+          $ref: "#/components/schemas/Decimal"
+          example: 2507.95
+        fee:
+          $ref: "#/components/schemas/Decimal"
+          example: 1.05
+        customer:
+          $ref: "#/components/schemas/PayoutCustomer"
+        events:
+          type: array
+          description: The events of the payout
+          items:
+            $ref: "#/components/schemas/PayoutTransferState"
+          example:
+            - state: created
+              timestamp: 2024-09-30T18:00:58.087031Z
+              message: "Payin created"
+    PayoutTransferInput:
+      type: object
+      properties:
+        origin:
+          type: string
+          format: uuid
+          description: The origin account Id
+          example: f3676011-5203-43db-a760-115203e3db5e
+        description:
+          type: string
+          maxLength: 100
+          example: "Test Payout"
+        external_id:
+          type: string
+          maxLength: 50
+          description: Id used to track the payout
+          example: e5af7e6e-98f4-4e43-af7e-6e98f42e43ef
+        amount:
+          $ref: "#/components/schemas/Decimal"
+          example: 2507.95
+        customer:
+          $ref: "#/components/schemas/InputCustomer"
+    Account:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: f3676011-5203-43db-a760-115203e3db5e
+        local_account_number:
+          type: string
+          maxLength: 36
+          description: The account number
+          example: "012856302547450692"
+        balance:
+          $ref: "#/components/schemas/Decimal"
+          description: The account balance
+          example: 48.15
+        currency:
+          $ref: "#/components/schemas/Currency"
+        country:
+          $ref: "#/components/schemas/Country"
+          description: The account country location
+          example: MX
+        active:
+          type: boolean
+          description: Account active flag
+    Currency:
+      type: string
+      pattern: "^[A-Z]{3}$"
+      description: ISO-4217 currency code
+      example: MXN
+    Decimal:
+      type: number
+      format: double
+      description: String encoded decimal number
+      example: 10.0
+    Country:
+      type: string
+      pattern: "[A-Z]{2}"
+      description: ISO-3166-1 Alfa-2 country code
+      example: MX
+    WebhookPayload:
+      type: object
+      required:
+        - verify_token
+        - events
+      properties:
+        verify_token:
+          type: string
+          example: "310XXXX4"
+        events:
+          type: array
+          items:
+            $ref: "#/components/schemas/Event"
+    Event:
+      type: object
+      required:
+        - event_type
+        - event_id
+        - timestamp
+        - payload
+      properties:
+        event_type:
+          type: string
+          enum:
+            [
+              payin.rejected,
+              payin.settled,
+              payout.initiated,
+              payout.settled,
+              payout.failed,
+              payout.cancelled,
+            ]
+        event_id:
+          type: string
+          format: uuid
+          example: "209f681b-XXXX-4238-XXXX-2204XXXX27cf"
+        timestamp:
+          type: string
+          format: date-time
+          example: 2024-09-30T18:00:58.087031Z
+        payload:
+          $ref: "#/components/schemas/Payload"
+    Payload:
+      type: object
+      required:
+        - amount
+        - concept
+        - currency
+        - intent_id
+      properties:
+        amount:
+          type: string
+          example: "1"
+        concept:
+          type: string
+          example: "payment1987"
+        currency:
+          type: string
+          example: "USD"
+        id:
+          type: string
+          example: "aaa13cd5a9XXXXXXXX521269ac13bb5a" # payin id or payout id
+        transaction_id:
+          type: string
+          example: "123123"
+        external_id:
+          type: string
+          example: "bf5d88cc-f60c-4612-8739-15b3244fcd04"
+        origin:
+          $ref: "#/components/schemas/AccountDetails"
+        destination:
+          $ref: "#/components/schemas/AccountDetails"
+        voucher_data:
+          $ref: "#/components/schemas/VoucherDataEvent"
+        error:
+          $ref: "#/components/schemas/PayloadError"
+    PayloadError:
+      type: object
+      properties:
+        code:
+          type: string
+          example: "MX02"
+        message:
+          type: string
+          example: "Blocked account. If data from a blocked account has been entered, the bank will reject the transaction and make the corresponding refund."
+    VoucherDataEvent:
+      type: object
+      properties:
+        key_tracing:
+          type: string
+          example: "CR17398669493483414"
+        url:
+          type: string
+          example: "https://www.banxico.org.mx/cep/go?i=90646&s=20210302&d=J2X%2BgBSm8663Dvlj9Cua50kJKFa%2FAbICkTvi8F2ZHd7pfNZtEjOqgdIkmmcMTPka6SdtphN4fvVIzUbajdTmRSNFh8VV9plun2gYsufJB0U%3D"
+    ExchangeCurrencyRequest:
+      type: object
+      properties:
+        amount:
+          $ref: "#/components/schemas/Decimal"
+        pair:
+          type: string
+          example: "MXNUSD"
+    AccountDetails:
+      type: object
+      required:
+        - account_number
+      properties:
+        account_number:
+          type: string
+          pattern: "[0-9]{8,36}$"
+          example: "1939512312322150"
+        branch:
+          type: string
+          example: "0"
+        owner_name:
+          type: string
+          example: "CONSULTORA XXXXXXXX SAC"
+        account_format:
+          type: string
+          description: The type of account
+          enum:
+            - clabe
+            - iban
+            - cci
+          example: clabe
+        tax_id_type:
+          type: string
+          description: The type of tax identification of the customer
+          enum:
+            - rfc
+            - cnpj
+            - ruc
+          example: rfc
+        tax_id:
+          type: string
+          pattern: "[0-9A-Z]{10,30}$"
+          description: The customer's tax identification number
+          example: DODJ2301016J3
+        bank:
+          $ref: "#/components/schemas/Bank"
+    CustomerAccountDetails:
+      type: object
+      properties:
+        account_number:
+          type: string
+          pattern: "[0-9]{8,36}$"
+          example: "19395123123223150"
+        branch:
+          type: string
+          example: "0"
+        account_format:
+          type: string
+          description: The type of customer's account
+          enum:
+            - clabe
+            - iban
+            - cci
+          example: clabe
+        bicfi:
+          type: string
+          pattern: "^[0-9A-Z]{8}([0-9A-Z]{3})?$"
+          description: The bank BICFI code
+          example: BBVAMXMMXXX
+      required:
+        - account_number
+    VirtualAccountDetails:
+      type: object
+      properties:
+        account_format:
+          type: string
+          description: The type of customer's account
+          enum:
+            - clabe
+            - iban
+            - cci
+          example: clabe
+        account_number:
+          type: string
+          pattern: "[0-9A-Z]{8,36}$"
+          description: The customer account number
+          example: "012180826854179156"
+        name:
+          type: string
+          maxLength: 50
+          description: The customer name
+          example: Jane Doe
+        active:
+          type: boolean
+          description: Account active flag
+        branch:
+          type: string
+          example: "0"
+        bank:
+          $ref: "#/components/schemas/Bank"
+      required:
+        - account_number
+        - account_format
+    WithdrawalAccountDetailsResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: 9c1dd10e-7c19-470d-9dd1-0e7c19670d64
+        account_format:
+          type: string
+          description: The type of customer's account
+          enum:
+            - clabe
+            - iban
+            - cci
+          example: clabe
+        account_number:
+          type: string
+          pattern: "[0-9]{8,36}$"
+          description: The customer account number
+          example: "012180826854179156"
+        description:
+          type: string
+          maxLength: 50
+          description: Account description
+          example: Account #1
+        selected:
+          type: boolean
+          description: Account selected for withdrawal
+        branch:
+          type: string
+          example: "0"
+        bank:
+          $ref: "#/components/schemas/Bank"
+      required:
+        - account_number
+    WithdrawalAccountDetailsRequest:
+      type: object
+      properties:
+        account_format:
+          type: string
+          description: The type of customer's account
+          enum:
+            - iban
+            - clabe
+            - cci
+          example: clabe
+        account_number:
+          type: string
+          pattern: "[0-9]{8,36}$"
+          description: The customer account number
+          example: "012180826854179156"
+        description:
+          type: string
+          maxLength: 50
+          description: Account description
+          example: "Account #1"
+        selected:
+          type: boolean
+          description: Account selected for withdrawal
+        branch:
+          type: string
+          example: "0"
+        bicfi:
+          type: string
+          pattern: "^[0-9A-Z]{8}([0-9A-Z]{3})?$"
+          description: The bank BICFI code
+          example: BBVAMXMMXXX
+      required:
+        - account_number
+  requestBodies:
+    WebhookEvent:
+      description: Webhook payload containing payment event data
+      required: true
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/WebhookPayload"
+          examples:
+            Payin Settled:
+              value:
+                verify_token: "310XXXX4"
+                events:
+                  - event_type: "payin.settled"
+                    event_id: "209f681b-XXXX-4238-XXXX-2204XXXX27cf"
+                    timestamp: "2023-01-31T21:04:37.781798"
+                    payload:
+                      amount: "1"
+                      concept: "payment1987"
+                      currency: "USD"
+                      id: "aaa13cd5a9XXXXXXXX521269ac13bb5a"
+                      transaction_id: "123123"
+                      external_id: "bf5d88cc-f60c-4612-8739-15b3244fcd04"
+                      origin:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "DODJ2301016J3"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      destination:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      voucher_data:
+                        key_tracing: "CR21300120312"
+                        url: "https://www.banxico.org.mx/cep/go?i=90646&s=20210302&d=J2X%2BgBSm8663Dvlj9Cua50kJKFa%2FAbICkTvi8F2ZHd7pfNZtEjOqgdIkmmcMTPka6SdtphN4fvVIzUbajdTmRSNFh8VV9plun2gYsufJB0U%3D"
+            Payin Failed:
+              value:
+                verify_token: "310XXXX4"
+                events:
+                  - event_type: "payin.failed"
+                    event_id: "209f681b-XXXX-4238-XXXX-2204XXXX27cf"
+                    timestamp: "2023-01-31T21:04:37.781798"
+                    payload:
+                      amount: "1"
+                      concept: "payment1987"
+                      currency: "USD"
+                      id: "aaa13cd5a9XXXXXXXX521269ac13bb5a"
+                      transaction_id: "123123"
+                      external_id: "bf5d88cc-f60c-4612-8739-15b3244fcd04"
+                      origin:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      destination:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      voucher_data:
+                        key_tracing: "CR21300120312"
+                        url: null
+                      error:
+                        code: "MX99"
+                        message: "Amount does not match with intent data"
+            Payout Initiated:
+              value:
+                verify_token: "310XXXX4"
+                events:
+                  - event_type: "payout.initiated"
+                    event_id: "209f681b-XXXX-4238-XXXX-2204XXXX27cf"
+                    timestamp: "2023-01-31T21:04:37.781798"
+                    payload:
+                      amount: "1"
+                      concept: "payment1987"
+                      currency: "USD"
+                      id: "aaa13cd5a9XXXXXXXX521269ac13bb5a"
+                      transaction_id: "123123"
+                      external_id: "bf5d88cc-f60c-4612-8739-15b3244fcd04"
+                      origin:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      destination:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      voucher_data:
+                        key_tracing: "CR21300120312"
+                        url: null
+            Payout Settled:
+              value:
+                verify_token: "310XXXX4"
+                events:
+                  - event_type: "payout.settled"
+                    event_id: "209f681b-XXXX-4238-XXXX-2204XXXX27cf"
+                    timestamp: "2023-01-31T21:04:37.781798"
+                    payload:
+                      amount: "1"
+                      concept: "payment1987"
+                      currency: "USD"
+                      id: "aaa13cd5a9XXXXXXXX521269ac13bb5a"
+                      transaction_id: "123123"
+                      external_id: "bf5d88cc-f60c-4612-8739-15b3244fcd04"
+                      origin:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      destination:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      voucher_data:
+                        key_tracing: "CR21300120312"
+                        url: "https://www.banxico.org.mx/cep/go?i=90646&s=20210302&d=J2X%2BgBSm8663Dvlj9Cua50kJKFa%2FAbICkTvi8F2ZHd7pfNZtEjOqgdIkmmcMTPka6SdtphN4fvVIzUbajdTmRSNFh8VV9plun2gYsufJB0U%3D"
+            Payout Failed:
+              value:
+                verify_token: "310XXXX4"
+                events:
+                  - event_type: "payout.failed"
+                    event_id: "209f681b-XXXX-4238-XXXX-2204XXXX27cf"
+                    timestamp: "2023-01-31T21:04:37.781798"
+                    payload:
+                      amount: "1"
+                      concept: "payment1987"
+                      currency: "USD"
+                      id: "aaa13cd5a9XXXXXXXX521269ac13bb5a"
+                      transaction_id: "123123"
+                      external_id: "bf5d88cc-f60c-4612-8739-15b3244fcd04"
+                      origin:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      destination:
+                        account_number: "19395XXXXXXXX150"
+                        branch: "0"
+                        owner_name: "CONSULTORA XXXXXXXX SAC"
+                        account_format: "string"
+                        tax_id_type: "string"
+                        tax_id: "string"
+                        bank:
+                          code: "012"
+                          bicfi: "BBVAMXMMXXX"
+                          country: "MX"
+                      voucher_data:
+                        key_tracing: "CR21300120312"
+                        url: null
+                      error:
+                        code: "MX02"
+                        message: "Blocked account - If data from a blocked account has been entered, the bank will reject the transaction and make the corresponding refund."
+
+  responses:
+    ValidationException:
+      description: Validation error when serializers fail.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                description: Error code identifier.
+                example: "X1001"
+              type:
+                type: string
+                description: Type of error.
+                example: "validation_error"
+              message:
+                type: string
+                description: General error message.
+                example: "Validation error"
+              status:
+                type: string
+                description: Status of the error response.
+                example: "error"
+              description:
+                type: array
+                description: Detailed validation errors for specific fields.
+                items:
+                  type: object
+                  properties:
+                    field_name:
+                      type: string
+                      description: The name of the field that failed validation.
+                      example: "field"
+                    error_detail:
+                      type: array
+                      description: List of validation error messages related to the field.
+                      items:
+                        type: string
+                      example: ["Invalid Customer ID."]
+    ParseException:
+      description: Raised when data sent is malformed.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1002"
+              type:
+                type: string
+                example: "parse_error"
+              message:
+                type: string
+                example: "Malformed request data"
+              status:
+                type: string
+                example: "error"
+    Unauthorized:
+      description: Unauthorized access due to missing or invalid API key
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1003"
+              type:
+                type: string
+                example: "authentication_error"
+              message:
+                type: string
+                example: "You do not have permission to access this resource"
+              status:
+                type: string
+                example: "error"
+    PermissionException:
+      description: Permission denied for the requested action.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1004"
+              type:
+                type: string
+                example: "permission_denied"
+              message:
+                type: string
+                example: "You do not have permission to perform this action"
+              status:
+                type: string
+                example: "error"
+    NotFoundException:
+      description: The requested resource does not exist.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1005"
+              type:
+                type: string
+                example: "not_found"
+              message:
+                type: string
+                example: "Resource not found"
+              status:
+                type: string
+                example: "error"
+    MethodNotAllowedException:
+      description: The HTTP method used is not allowed for this endpoint.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1006"
+              type:
+                type: string
+                example: "method_not_allowed"
+              message:
+                type: string
+                example: "Method not allowed"
+              status:
+                type: string
+                example: "error"
+    NotAcceptableException:
+      description: The Accept header cannot be satisfied.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1007"
+              type:
+                type: string
+                example: "not_acceptable"
+              message:
+                type: string
+                example: "Not acceptable"
+              status:
+                type: string
+                example: "error"
+    UnsupportedMediaTypeException:
+      description: The request's content type is not supported.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1008"
+              type:
+                type: string
+                example: "unsupported_media_type"
+              message:
+                type: string
+                example: "Unsupported media type"
+              status:
+                type: string
+                example: "error"
+    ThrottledException:
+      description: Too many requests, the request has been throttled.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1009"
+              type:
+                type: string
+                example: "throttling_error"
+              message:
+                type: string
+                example: "Too many requests"
+              status:
+                type: string
+                example: "error"
+    CrossBorderAPIException:
+      description: A generic internal API error occurred.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X1010"
+              type:
+                type: string
+                example: "crossborder_api_error"
+              message:
+                type: string
+                example: "Internal server error"
+              status:
+                type: string
+                example: "error"
+    InvalidAccountFormat:
+      description: The submitted account format is not supported.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2002"
+              type:
+                type: string
+                example: "invalid_account_type"
+              message:
+                type: string
+                example: "Invalid account format"
+              status:
+                type: string
+                example: "error"
+    InvalidTaxIdFormat:
+      description: The submitted tax ID format is not supported.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2003"
+              type:
+                type: string
+                example: "invalid_tax_id_format"
+              message:
+                type: string
+                example: "Invalid tax id format"
+              status:
+                type: string
+                example: "error"
+    ProviderUnavailableException:
+      description: An error occurred with the provider.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2004"
+              type:
+                type: string
+                example: "provider_unavailable"
+              message:
+                type: string
+                example: "Provider unavailable"
+              status:
+                type: string
+                example: "error"
+    InvalidFinancialInstitutionException:
+      description: The submitted financial institution is not supported.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2005"
+              type:
+                type: string
+                example: "invalid_financial_institution"
+              message:
+                type: string
+                example: "Invalid financial institution"
+              status:
+                type: string
+                example: "error"
+    InvalidAmount:
+      description: An error occurred with the operation amount.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2006"
+              type:
+                type: string
+                example: "invalid_amount"
+              message:
+                type: string
+                example: "Invalid amount"
+              status:
+                type: string
+                example: "error"
+    InvalidDateException:
+      description: An error occurred with the operation date.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2007"
+              type:
+                type: string
+                example: "invalid_date"
+              message:
+                type: string
+                example: "Invalid date"
+              status:
+                type: string
+                example: "error"
+    AuthorizationProviderException:
+      description: An error occurred with the provider authorization mechanism.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2008"
+              type:
+                type: string
+                example: "provider_unavailable"
+              message:
+                type: string
+                example: "Provider unavailable"
+              status:
+                type: string
+                example: "error"
+    InvalidProviderDataException:
+      description: There is an error in the provider data.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2009"
+              type:
+                type: string
+                example: "invalid_provider_data"
+              message:
+                type: string
+                example: "Invalid provider data"
+              status:
+                type: string
+                example: "error"
+    PaymentAlreadyRefunded:
+      description: The payment has already been refunded and cannot be processed again.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2010"
+              type:
+                type: string
+                example: "payment_already_refunded"
+              message:
+                type: string
+                example: "Payment has already been refunded"
+              status:
+                type: string
+                example: "error"
+    InsufficientAmount:
+      description: The payment amount is insufficient to complete the transaction.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2011"
+              type:
+                type: string
+                example: "insufficient_amount"
+              message:
+                type: string
+                example: "Insufficient amount for the transaction"
+              status:
+                type: string
+                example: "error"
+    PaymentAmountExceedsOriginal:
+      description: The payment amount exceeds the originally intended amount for the transaction.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2012"
+              type:
+                type: string
+                example: "payment_amount_exceeds_original"
+              message:
+                type: string
+                example: "Payment amount exceeds the originally intended amount"
+              status:
+                type: string
+                example: "error"
+    PaymentCannotBeRefunded:
+      description: The payment intent cannot be refunded in the specified state.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2013"
+              type:
+                type: string
+                example: "payment_cannot_be_refunded"
+              message:
+                type: string
+                example: "Payment intent cannot be refunded in the specified state"
+              status:
+                type: string
+                example: "error"
+    AccountDataNotMatch:
+      description: The account data does not match the provided customer data.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2014"
+              type:
+                type: string
+                example: "account_data_not_match"
+              message:
+                type: string
+                example: "Account data does not match the provided customer data. Reason: {...}"
+              status:
+                type: string
+                example: "error"
+    InvalidAccount:
+      description: The submitted account is not open or available to receive funds.
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              code:
+                type: string
+                example: "X2015"
+              type:
+                type: string
+                example: "invalid_account"
+              message:
+                type: string
+                example: "Invalid account. Reason: {...}"
+              status:
+                type: string
+                example: "error"

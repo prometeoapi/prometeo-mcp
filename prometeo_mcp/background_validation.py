@@ -17,6 +17,7 @@ def create_validation_task(
     document_type: Optional[str],
     branch_code: Optional[str],
     account_type: Optional[str],
+    beneficiary_name: Optional[str] = None,
 ) -> str:
     validation_id = str(uuid4())
     validation_tasks[validation_id] = {
@@ -37,6 +38,7 @@ def create_validation_task(
             document_type,
             branch_code,
             account_type,
+            beneficiary_name,
         )
     )
 
@@ -53,6 +55,7 @@ async def _async_validation_wrapper(
     document_type: Optional[str],
     branch_code: Optional[str],
     account_type: Optional[str],
+    beneficiary_name: Optional[str] = None,
 ):
     try:
         validate_fn = client.account_validation.validate
@@ -64,6 +67,7 @@ async def _async_validation_wrapper(
             "document_type": document_type,
             "branch_code": branch_code,
             "account_type": account_type,
+            "beneficiary_name": beneficiary_name,
         }
 
         result = validate_fn(**kwargs)

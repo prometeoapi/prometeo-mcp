@@ -1,15 +1,15 @@
 # Prometeo MCP Server
 
-A server implementation for MCP (Modular Control Platform) to connect Prometeo API. Include functions to access banking information, validate accounts and query CURP.
+A server implementation for MCP (Model Context Protocol) to connect Prometeo API. Include functions to access banking information, validate accounts and query CURP.
 
 ---
 
 ## 🚀 Features
 
 - ✅ Python 3.11+
-- ✅ Pydantic v2.x with `ConfigDict`
-- ✅ `mcp[cli] >= 1.6.0` integration
-- ✅ Prometeo API SDK v2.0.1
+- ✅ Pydantic v2.x
+- ✅ FastMCP integration
+- ✅ Prometeo API SDK
 
 ---
 
@@ -39,7 +39,7 @@ uv pip install -e .
 
 ## 🧠 Running the Application in MCP-Compatible LLMs
 
-This project supports MCP (Multi-agent Control Protocol) integration and can be configured for execution inside LLM tools or agents that support external server launching.
+This project supports MCP (Model Context Protocol) integration and can be configured for execution inside LLM tools or agents that support external server launching.
 
 Below are configuration examples for different LLMs:
 
@@ -170,13 +170,23 @@ Obtains transaction history (movements) for a specific account within a defined 
 
 Securely terminates an active banking session, ensuring proper cleanup of authentication tokens and session data.
 
+##  OpenAPI Resources
+
+### `openapi://all`
+
+Lists all available OpenAPI resources. From this list you can select a resource to read.
+
+### `openapi://{document_id}`
+
+Reads a specific OpenAPI resource by its ID. From this resource you can generate client code to interact with the any Prometeo API.
+
 ---
 
 ### 💡 Prompt Examples
 
 To see how to interact with this MCP server via supported LLMs, check out:
 
-📁 [`examples/prompts.txt`](examples/prompts.txt)
+📁 [`examples/prompts.md`](examples/prompts.md)
 
 It contains example prompts you can copy and paste into Claude, ChatGPT (with MCP), or any other compatible LLM to trigger real server calls and test behavior.
 
