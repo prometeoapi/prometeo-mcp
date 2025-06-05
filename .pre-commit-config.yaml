@@ -1,0 +1,21 @@
+exclude: ^(.bzr|\.direnv|\.eggs|\.git|\.hg|\.mypy_cache|\.nox|\.pants\.d|\.svn|\.tox|\.venv|_build|buck-out|build|dist|node_modules|venv|\.idea|dockerdata|static|.*\b(migrations)\b.*)
+
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.7.3
+    hooks:
+      - id: ruff
+        entry: sh -c "ruff check --fix && ruff format"
+        language_version: python3.10
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.5.0
+    hooks:
+      - id: trailing-whitespace
+        files: \.py$
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-yaml
+      - id: pretty-format-json
+        args: ["--autofix"]
+        exclude: "requirements/"
