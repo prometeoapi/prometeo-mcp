@@ -1,7 +1,6 @@
 import pytest
 import asyncio
-from datetime import datetime
-from prometeo_mcp.background_validation import (
+from prometeo_mcp.account_validation.background import (
     create_validation_task,
     get_validation_status,
     validation_tasks,
@@ -34,7 +33,7 @@ async def test_create_validation_task_success():
         document_number="99999999-9",
         document_type="RUT",
         branch_code=None,
-        account_type="CHECKING"
+        account_type="CHECKING",
     )
 
     assert task_id in validation_tasks
@@ -60,7 +59,7 @@ async def test_create_validation_task_failure():
         document_number="99999999-9",
         document_type="RUT",
         branch_code=None,
-        account_type="CHECKING"
+        account_type="CHECKING",
     )
 
     assert task_id in validation_tasks

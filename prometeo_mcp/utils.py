@@ -13,6 +13,7 @@ SCHEMA_MAP = {
     "country_code": "Country",
 }
 
+
 def get_param_description(parameter: str) -> str | None:
     """Extract the description for a schema from an OpenAPI YAML file."""
     with open(OPENAPI_PATH, "r") as f:
@@ -24,7 +25,7 @@ def get_param_description(parameter: str) -> str | None:
 
     return (
         spec.get("components", {})
-            .get("schemas", {})
-            .get(schema_name, {})
-            .get("description")
+        .get("schemas", {})
+        .get(schema_name, {})
+        .get("description")
     )

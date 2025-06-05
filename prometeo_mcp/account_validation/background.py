@@ -1,12 +1,11 @@
 import asyncio
-import inspect
 from datetime import datetime
 from typing import Optional
 from uuid import uuid4
 
-from prometeo.exceptions import PrometeoError
 
 validation_tasks = {}
+
 
 def create_validation_task(
     client,
@@ -23,7 +22,7 @@ def create_validation_task(
     validation_tasks[validation_id] = {
         "status": "pending",
         "created_at": datetime.utcnow().isoformat(),
-        "message": "Validation is still processing"
+        "message": "Validation is still processing",
     }
 
     # Schedule the task in the current running event loop
@@ -85,4 +84,6 @@ async def _async_validation_wrapper(
 
 
 def get_validation_status(validation_id: str):
-    return validation_tasks.get(validation_id, {"status": "unknown", "message": "Validation not found"})
+    return validation_tasks.get(
+        validation_id, {"status": "unknown", "message": "Validation not found"}
+    )

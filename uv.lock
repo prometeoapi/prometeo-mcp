@@ -187,21 +187,21 @@ wheels = [
 
 [[package]]
 name = "prometeo"
-version = "2.0.4"
+version = "2.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "six" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/17/0b/200e438d8a1bce03752fa5675ac7a04af38d5665b4e25167a9acd9e40be5/prometeo-2.0.4.tar.gz", hash = "sha256:10c0af80833564e1b17a444a65ae4e0f3b0812bc31cde3f5db2f408a5ee5e793", size = 42823, upload_time = "2025-05-21T20:15:04.043Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/90/61/742a737f5de3ab027b4d3dbe1ccfceff3e84d07ce84a6fb327e6b5f4e56a/prometeo-2.0.5.tar.gz", hash = "sha256:8a9ef543235f86416bc6a36e9eee84cad72b3e2b248915a8cc116b5a231890c7", size = 48143, upload_time = "2025-06-05T15:23:17.471Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/71/06/952b4a3079e6136cb9e1a9e422995385146c86f7531b75600c49ad730449/prometeo-2.0.4-py3-none-any.whl", hash = "sha256:b0e5f1d0dee497d005892ccb543f47b0ff68471f3a553e0ab3776a884db2b89a", size = 56034, upload_time = "2025-05-21T20:15:03.025Z" },
+    { url = "https://files.pythonhosted.org/packages/d8/50/cab11c4c7c4a6356fbc1c8cb5d85d8c1eb64c33c13f7d65f3657d036a140/prometeo-2.0.5-py3-none-any.whl", hash = "sha256:82cac20fa5fea421212b5aeb8d04ee250b4030bf7ce60f7ad95894bf8a9979df", size = 62808, upload_time = "2025-06-05T15:23:16.489Z" },
 ]
 
 [[package]]
 name = "prometeo-mcp"
-version = "0.1.0b5"
+version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "mcp", extra = ["cli"] },
@@ -222,7 +222,7 @@ dev = [
 requires-dist = [
     { name = "anyio", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "mcp", extras = ["cli"], specifier = "<=1.8.1" },
-    { name = "prometeo", specifier = "==2.0.4" },
+    { name = "prometeo", specifier = "==2.0.5" },
     { name = "pydantic", specifier = "<=2.11" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
