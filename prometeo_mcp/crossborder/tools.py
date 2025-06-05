@@ -220,7 +220,7 @@ async def crossborder_select_withdrawal_account(
 
 @mcp.tool()
 async def crossborder_get_accounts():
-    """Get all withdrawal accounts for a crossborder customer"""
+    """Get all accounts to the current merchant (API key assigned)."""
     try:
         accounts = await client.crossborder.get_accounts()
         return accounts
@@ -230,7 +230,7 @@ async def crossborder_get_accounts():
 
 @mcp.tool()
 async def crossborder_get_account(account_id: str):
-    """Get a withdrawal account for a crossborder customer"""
+    """Get a merchant account by account_id."""
     try:
         account = await client.crossborder.get_account(account_id)
         return account
@@ -240,7 +240,7 @@ async def crossborder_get_account(account_id: str):
 
 @mcp.tool()
 async def crossborder_get_account_transactions(account_id: str):
-    """Get all transactions for a withdrawal account"""
+    """Get all transactions for a merchant account by account_id."""
     try:
         transactions = await client.crossborder.get_account_transactions(account_id)
         return transactions

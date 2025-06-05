@@ -138,6 +138,8 @@ Allows you to validate and retrieve information associated with an existing CURP
 
 Enables retrieval of a CURP by providing personal demographic data instead of the CURP itself. This function requires name, surnames, gender, birthdate, and state of registration to find the corresponding CURP.
 
+---
+
 ### Account Validation Tools
 
 #### `validate_account`
@@ -148,10 +150,11 @@ Validates bank account information across multiple Latin American countries (Arg
 
 Retrieves the status or result of a previously initiated account validation request. This is particularly useful for asynchronous validations that may take time to process through banking systems.
 
-
 #### `get_tasks`
 
 Retrieves information about system tasks and their statuses. This function is useful for monitoring background processes and understanding the overall system state.
+
+---
 
 ### Banking Connection Tools
 
@@ -169,6 +172,60 @@ Obtains transaction history (movements) for a specific account within a defined 
 #### `banking_logout`
 
 Securely terminates an active banking session, ensuring proper cleanup of authentication tokens and session data.
+
+---
+
+### Cross Border Tools
+
+#### `crossborder_create_intent`
+Create a crossborder payin intent using the destination_id, concept, currency, amount, customer and external_id. Payins support: virtual account (MX) or QR code (BR, PE).
+
+#### `crossborder_create_payout`
+Create a crossborder payout transfer for the local rail. For MX uses SPEI, for BR uses PIX and for PE uses CCE.
+
+#### `crossborder_get_intent`
+Get a crossborder payin intent by intent_id. Able to get the status of the intent.
+
+#### `crossborder_get_payout`
+Get a crossborder payout transfer by payout_id. Able to get the status of the payout.
+
+#### `crossborder_list_intents`
+List all crossborder payin intents.
+
+#### `crossborder_list_payouts`
+List all crossborder payout transfers.
+
+#### `crossborder_refund_intent`
+Refund a crossborder payin intent. Only able to refund if the intent is in Settled status.
+
+#### `crossborder_create_customer`
+Create a crossborder customer. Customer is used for payins and payouts. If used for payins a QR or virtual account is created when calling the create_intent function. If used for payouts a withdrawal account is needed to perform the payout.
+
+#### `crossborder_get_customer`
+Get a crossborder customer by customer_id.
+
+#### `crossborder_list_customers`
+List all crossborder customers
+
+#### `crossborder_update_customer`
+Update a crossborder customer partial or full data.
+
+#### `crossborder_add_withdrawal_account`
+Add a withdrawal account to a crossborder customer. In scenarios that customer has more than one withdrawal account, the withdrawal account is selected by default.
+
+#### `crossborder_select_withdrawal_account`
+Select a withdrawal account for a crossborder customer. This is useful when customer has more than one withdrawal account.
+
+#### `crossborder_get_accounts`
+Get all accounts to the current merchant (API key assigned).
+
+#### `crossborder_get_account`
+Get a merchant account by account_id.
+
+#### `crossborder_get_account_transactions`
+Get all transactions for a merchant account by account_id.
+
+---
 
 ##  OpenAPI Resources
 
