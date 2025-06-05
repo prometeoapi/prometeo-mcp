@@ -17,6 +17,4 @@ client = Client(
     api_key=PROMETEO_API_KEY,
     environment=PROMETEO_ENVIRONMENT,
     timeout=HTTPX_TIMEOUT,
-    proxy="http://localhost:8080",
-    verify=False,
 )
