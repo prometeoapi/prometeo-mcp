@@ -3,6 +3,7 @@ from typing import Optional, Any
 from prometeo_mcp.config import client
 from prometeo.banking.exceptions import BankingClientError
 from prometeo_mcp.mcp_instance import mcp
+from prometeo.banking.models import Client
 
 _active_sessions = {}
 _interactive_fields = {}
@@ -36,11 +37,43 @@ async def banking_login(
                 "session_key": session_key,
                 "context": "OTP required",
             }
-        return {
-            "status": "success",
-            "message": f"Logged in as {username}",
-            "session_key": session_key,
-        }
+        elif session.get_status() == "select_client":
+            return {
+                "status": "select_client",
+                "session_key": session_key,
+                "context": "Select client",
+            }
+        else:
+            return {
+                "status": "success",
+                "message": f"Logged in as {username}",
+                "session_key": session_key,
+            }
+    except BankingClientError as e:
+        return {"status": "error", "message": str(e)}
+
+
+@mcp.tool()
+async def banking_select_client(session_key: str, client_id: str) -> dict:
+    """Select a client for an active session."""
+    if not _active_sessions.get(session_key):
+        return {"status": "error", "message": "Invalid or expired session_id"}
+    try:
+        session = client.banking.get_session(session_key)
+        await session.select_client(Client(id=client_id, name=""))
+        return {"status": "success", "message": "Client selected"}
+    except BankingClientError as e:
+        return {"status": "error", "message": str(e)}
+
+
+@mcp.tool()
+async def banking_get_clients(session_key: str) -> Any:
+    """Get list of clients for an active session."""
+    if not _active_sessions.get(session_key):
+        return {"status": "error", "message": "Invalid or expired session_id"}
+    try:
+        session = client.banking.get_session(session_key)
+        return await session.get_clients()
     except BankingClientError as e:
         return {"status": "error", "message": str(e)}
 
