@@ -14,5 +14,7 @@ if not PROMETEO_API_KEY:
     raise RuntimeError("PROMETEO_API_KEY environment variable is not set")
 
 client = Client(
-    api_key=PROMETEO_API_KEY, environment=PROMETEO_ENVIRONMENT, timeout=HTTPX_TIMEOUT
+    api_key=PROMETEO_API_KEY,
+    environment=PROMETEO_ENVIRONMENT,
+    timeout=HTTPX_TIMEOUT,
 )
