@@ -17,6 +17,7 @@ A server implementation for MCP (Model Context Protocol) to connect Prometeo API
 
 - Python 3.11+
 - [`uv`](https://github.com/astral-sh/uv) installed globally
+- An API Key (Register at [Prometeo](https://prometeoapi.com) to get one!)
 
 ---
 
