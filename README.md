@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/prometeoapi-prometeo-mcp-badge.png)](https://mseep.ai/app/prometeoapi-prometeo-mcp)
+
 # Prometeo MCP Server
 
 A server implementation for MCP (Model Context Protocol) to connect Prometeo API. Include functions to access banking information, validate accounts and query CURP.
