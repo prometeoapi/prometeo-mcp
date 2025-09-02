@@ -187,16 +187,16 @@ wheels = [
 
 [[package]]
 name = "prometeo"
-version = "2.0.5"
+version = "2.0.6"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "httpx" },
     { name = "pydantic" },
     { name = "six" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/90/61/742a737f5de3ab027b4d3dbe1ccfceff3e84d07ce84a6fb327e6b5f4e56a/prometeo-2.0.5.tar.gz", hash = "sha256:8a9ef543235f86416bc6a36e9eee84cad72b3e2b248915a8cc116b5a231890c7", size = 48143, upload_time = "2025-06-05T15:23:17.471Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/5a/da/513bde29f9f1d41a2f90461aefcbc6e50db939506f9a0a19d8c8544e2aa7/prometeo-2.0.6.tar.gz", hash = "sha256:628dc5732c9192ddf71566b1b3a3a8433122a70a2f487c3189cb9ebdfe987d92", size = 48248, upload_time = "2025-09-02T19:11:01.962Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d8/50/cab11c4c7c4a6356fbc1c8cb5d85d8c1eb64c33c13f7d65f3657d036a140/prometeo-2.0.5-py3-none-any.whl", hash = "sha256:82cac20fa5fea421212b5aeb8d04ee250b4030bf7ce60f7ad95894bf8a9979df", size = 62808, upload_time = "2025-06-05T15:23:16.489Z" },
+    { url = "https://files.pythonhosted.org/packages/6d/69/367c44bb2f6d2673610adc3dabcd3e96794af5dae3354df3c9c70999d0a8/prometeo-2.0.6-py3-none-any.whl", hash = "sha256:adfb1984e767fd0eb4e59a240873b32ab371b7952073ca8ce5d83bd9d33dc7bf", size = 62972, upload_time = "2025-09-02T19:10:59.96Z" },
 ]
 
 [[package]]
@@ -222,7 +222,7 @@ dev = [
 requires-dist = [
     { name = "anyio", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "mcp", extras = ["cli"], specifier = "<=1.8.1" },
-    { name = "prometeo", specifier = "==2.0.5" },
+    { name = "prometeo", specifier = "==2.0.6" },
     { name = "pydantic", specifier = "<=2.11" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.3" },
     { name = "pytest-asyncio", marker = "extra == 'dev'", specifier = ">=0.23" },
