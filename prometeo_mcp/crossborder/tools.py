@@ -160,7 +160,7 @@ async def crossborder_get_customer(customer_id: str):
 async def crossborder_list_customers():
     """List all crossborder customers"""
     try:
-        customers = await client.crossborder.list_customers()
+        customers = await client.crossborder.get_customers()
         return customers
     except Exception as e:
         return {"status": "error", "message": str(e)}

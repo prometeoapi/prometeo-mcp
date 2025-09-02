@@ -9,6 +9,7 @@ PROMETEO_API_KEY = os.environ.get("PROMETEO_API_KEY")
 PROMETEO_ENVIRONMENT = os.environ.get("PROMETEO_ENVIRONMENT", "sandbox")
 OPENAPI_PATH = "./prometeo_mcp/docs"
 HTTPX_TIMEOUT = Timeout(90.0)
+PROXY = os.environ.get("PROXY")
 
 if not PROMETEO_API_KEY:
     raise RuntimeError("PROMETEO_API_KEY environment variable is not set")
@@ -16,5 +17,7 @@ if not PROMETEO_API_KEY:
 client = Client(
     api_key=PROMETEO_API_KEY,
     environment=PROMETEO_ENVIRONMENT,
-    timeout=HTTPX_TIMEOUT,
+    timeout=HTTPX_TIMEOUT, 
+    proxy=PROXY, 
+    verify=False if PROXY else True,
 )
